@@ -1,0 +1,61 @@
+2024-01-02 12:33:30 - INFO: Scraping data from https://unfccc.int/documents?f%5B0%5D=conference%3A4300&f%5B1%5D=conference%3A4301&f%5B2%5D=conference%3A4460&f%5B3%5D=conference%3A4466&f%5B4%5D=conference%3A4526&f%5B5%5D=conference%3A4540&f%5B6%5D=document_type%3A908
+2024-01-02 12:34:07 - INFO: Scraping data from selection url: 
+https://unfccc.int/documents?f%5B0%5D=conference%3A4300&f%5B1%5D=conference%3A4301&f%5B2%5D=conference%3A4460&f%5B3%5D=conference%3A4466&f%5B4%5D=conference%3A4526&f%5B5%5D=conference%3A4540&f%5B6%5D=document_type%3A908
+2024-01-02 12:38:17 - INFO: Scraping data from selection url: 
+https://unfccc.int/documents?f%5B0%5D=conference%3A4300&f%5B1%5D=conference%3A4301&f%5B2%5D=conference%3A4460&f%5B3%5D=conference%3A4466&f%5B4%5D=conference%3A4526&f%5B5%5D=conference%3A4540&f%5B6%5D=document_type%3A908
+2024-01-02 13:14:46 - INFO: Scraping data from selection url: 
+https://unfccc.int/documents?f%5B0%5D=conference%3A4300&f%5B1%5D=conference%3A4301&f%5B2%5D=conference%3A4460&f%5B3%5D=conference%3A4466&f%5B4%5D=conference%3A4526&f%5B5%5D=conference%3A4540&f%5B6%5D=document_type%3A908
+2024-01-02 13:16:11 - INFO: Scraping data from selection url: 
+https://unfccc.int/documents?f%5B0%5D=conference%3A4300&f%5B1%5D=conference%3A4301&f%5B2%5D=conference%3A4460&f%5B3%5D=conference%3A4466&f%5B4%5D=conference%3A4526&f%5B5%5D=conference%3A4540&f%5B6%5D=document_type%3A908
+2024-01-02 13:21:11 - INFO: Scraping data from selection url: 
+https://unfccc.int/documents?f%5B0%5D=conference%3A4300&f%5B1%5D=conference%3A4301&f%5B2%5D=conference%3A4460&f%5B3%5D=conference%3A4466&f%5B4%5D=conference%3A4526&f%5B5%5D=conference%3A4540&f%5B6%5D=document_type%3A908
+2024-01-02 13:23:17 - INFO: Scraping data from selection url: 
+https://unfccc.int/documents?f%5B0%5D=conference%3A4300&f%5B1%5D=conference%3A4301&f%5B2%5D=conference%3A4460&f%5B3%5D=conference%3A4466&f%5B4%5D=conference%3A4526&f%5B5%5D=conference%3A4540&f%5B6%5D=document_type%3A908
+2024-01-02 13:23:49 - INFO: Scraping data from selection url: 
+https://unfccc.int/documents?f%5B0%5D=conference%3A4300&f%5B1%5D=conference%3A4301&f%5B2%5D=conference%3A4460&f%5B3%5D=conference%3A4466&f%5B4%5D=conference%3A4526&f%5B5%5D=conference%3A4540&f%5B6%5D=document_type%3A908
+2024-01-02 13:24:38 - INFO: Scraping data from selection url: 
+https://unfccc.int/documents?f%5B0%5D=conference%3A4300&f%5B1%5D=conference%3A4301&f%5B2%5D=conference%3A4460&f%5B3%5D=conference%3A4466&f%5B4%5D=conference%3A4526&f%5B5%5D=conference%3A4540&f%5B6%5D=document_type%3A908
+2024-01-02 20:14:45 - INFO: Loading started
+2024-01-02 20:15:11 - INFO: Loading done
+2024-01-02 20:15:11 - INFO: 50/74
+2024-01-02 20:15:14 - INFO: Loading started
+2024-01-02 20:15:19 - INFO: Loading done
+2024-01-02 20:15:19 - INFO: Done
+2024-01-02 20:16:04 - INFO: Loading started
+2024-01-02 20:16:05 - WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ProtocolError('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))': /session/3ca01b2e58df05c50437ba430a06766c
+2024-01-02 20:16:05 - WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fa040cd4cb0>: Failed to establish a new connection: [Errno 111] Connection refused')': /session/3ca01b2e58df05c50437ba430a06766c
+2024-01-02 20:16:05 - WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x7fa03fc43b30>: Failed to establish a new connection: [Errno 111] Connection refused')': /session/3ca01b2e58df05c50437ba430a06766c
+2024-01-02 20:17:27 - INFO: Loading started
+2024-01-02 20:17:40 - INFO: Loading done
+2024-01-02 20:17:40 - INFO: 50/74
+2024-01-02 20:17:43 - INFO: Loading started
+2024-01-02 20:17:46 - INFO: Loading done
+2024-01-02 20:17:46 - INFO: Done
+2024-01-02 20:22:44 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L12E.pdf
+2024-01-02 20:23:19 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L12E.pdf
+2024-01-02 20:23:24 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbsta2023_L06E.pdf
+2024-01-02 20:23:29 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sb2023_L06E.pdf
+2024-01-02 20:23:34 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sb2023_L05E.pdf
+2024-01-02 20:23:46 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L10E.pdf
+2024-01-02 20:23:51 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L11a03E.pdf
+2024-01-02 20:23:57 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L11E.pdf
+2024-01-02 20:24:02 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L11a01E.pdf
+2024-01-02 20:24:07 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L11a02E.pdf
+2024-01-02 20:24:12 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbsta2023_L07E.pdf
+2024-01-02 20:24:17 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sb2023_L03E.pdf
+2024-01-02 20:24:51 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L12E.pdf
+2024-01-02 20:24:56 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbsta2023_L06E.pdf
+2024-01-02 20:25:01 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sb2023_L06E.pdf
+2024-01-02 20:25:06 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sb2023_L05E.pdf
+2024-01-02 20:25:12 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L10E.pdf
+2024-01-02 20:25:17 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L11a03E.pdf
+2024-01-02 20:25:22 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L11E.pdf
+2024-01-02 20:25:27 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L11a01E.pdf
+2024-01-02 20:25:33 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L11a02E.pdf
+2024-01-02 20:25:38 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbsta2023_L07E.pdf
+2024-01-02 20:25:43 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sb2023_L03E.pdf
+2024-01-02 20:26:07 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L09E.pdf
+2024-01-02 20:29:35 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbi2023_L12E.pdf
+2024-01-02 20:29:41 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sbsta2023_L06E.pdf
+2024-01-02 20:29:46 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sb2023_L06E.pdf
+2024-01-02 20:29:51 - INFO: Downloaded: https://unfccc.int/sites/default/files/resource/sb2023_L05E.pdf
