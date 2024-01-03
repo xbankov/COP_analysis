@@ -23,18 +23,19 @@ def get_eng_url_from_td(td):
 
 
 def parse_loaded_page(html_content):
-    soup = bs4.BeautifulSoup(html_content)
+    soup = bs4.BeautifulSoup(html_content, "lxml")
     documents = soup.find_all("tr")[1:]
-
+    logger.info(f"Number of TR elements {len(documents)}")
     documents_metadata = []
 
     for doc in documents:
         cols = doc.find_all("td")
         title = cols[1].getText().strip().replace(" ", "_")
         download_url = get_eng_url_from_td(cols[4])
+        cols[0]
         documents_metadata.append(Document(title=title, download_url=download_url))
 
-    return documents_metadata
+    return documents
 
 
 def download_pdf(document_metadata, folder):
@@ -60,26 +61,30 @@ def download_pdf(document_metadata, folder):
 def download_all_pdfs(documents_metadata, folder):
     status_l = []
     for doc in tqdm(documents_metadata):
-        status_l.append(download_pdf(doc, folder))
-        time.sleep(5)
+        try:
+            status = download_pdf(doc, folder)
+        except:
+            status = 404
+        status_l.append(status)
+        time.sleep(10)
     return status_l
 
 
-def wait_for_loading(driver, logger):
+def wait_for_loading(driver):
     loading_div = WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, "div.ajax-progress"))
     )
     logger.info("Loading started")
     # Wait until the div element disappears
-    WebDriverWait(driver, 30).until(EC.staleness_of(loading_div))
+    WebDriverWait(driver, 60).until(EC.staleness_of(loading_div))
     logger.info("Loading done")
 
 
-def load_all_documents_dynamically(driver, url_to_open, logger):
+def load_all_documents_dynamically(driver, url_to_open):
     try:
         driver.get(url_to_open)
 
-        items_per_page_button = driver.find_element(By.ID, "edit-items-per-page--4")
+        items_per_page_button = driver.find_element(By.ID, "edit-items-per-page--3")
         select = Select(items_per_page_button)
         last_index = len(select.options) - 1
         select.select_by_index(last_index)
@@ -101,7 +106,7 @@ def load_all_documents_dynamically(driver, url_to_open, logger):
 
             load_more_button = driver.find_element(
                 By.CSS_SELECTOR,
-                'div.block-views-block-documents-block-1 a.button[title="Load more items"]',
+                'div.block-views-blockdecisions-block-1 a.button[title="Load more items"]',
             )
             load_more_button.click()
 
@@ -110,10 +115,10 @@ def load_all_documents_dynamically(driver, url_to_open, logger):
             shown_documents = int(
                 driver.find_element(
                     By.CSS_SELECTOR,
-                    "div.block-views-block-documents-block-1 span.endresults",
+                    "div.block-views-blockdecisions-block-1 span.endresults",
                 ).text
             )
-        logger.info("Done")
+        logger.info("All documents loaded")
         return driver.page_source
     finally:
         driver.quit()

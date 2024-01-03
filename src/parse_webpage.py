@@ -14,14 +14,15 @@ def main():
     # SETUP
     start_time = time.time()
     logger = setup_logger()
-    url_to_scrape = config.TEST_URL
+    url_to_scrape = config.PRODUCTION_URL
     driver = setup_driver(config.DRIVER_PATH, config.HEADLESS)
 
     # ACTION
-    html_content = load_all_documents_dynamically(driver, url_to_scrape, logger)
+    html_content = load_all_documents_dynamically(driver, url_to_scrape)
     documents_metadata = parse_loaded_page(html_content)
 
     # REPORT
+    logger.info(len(documents_metadata))
     df = pd.DataFrame(
         [(doc.title, doc.download_url) for doc in documents_metadata],
         columns=["Title", "Download_URL"],
@@ -31,7 +32,7 @@ def main():
 
     end_time = time.time()
     elapsed_time = end_time - start_time
-    print(f"Finished in: {elapsed_time} seconds")
+    logger.info(f"Finished in: {elapsed_time} seconds")
 
 
 if __name__ == "__main__":
