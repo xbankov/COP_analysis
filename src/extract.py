@@ -1,5 +1,6 @@
 # src/extract_links.py
 from scrapers.decisions_scraper import DecisionScraper
+from scrapers.documents_scraper import DocumentScraper
 from utils.logger import setup_logger
 from utils.helpers import setup_driver
 import config
@@ -14,12 +15,18 @@ def main(args):
     driver = setup_driver(args.driver_path, args.headless)
 
     # ACTION
-    # TODO Robot detection
-    # TODO Scraper Selection
-    # TODO WebPage changes
     driver.get(url=args.url)
-    
-    scraper = DecisionScraper(driver, args.progress_csv)
+
+    if args.tab == "decisions":
+        scraper = DecisionScraper(driver, args.progress_csv)
+    elif args.tab == "documents":
+        scraper = DocumentScraper(driver, args.progress_csv)
+    else:
+        logger.error(
+            f"Unknown type of webpage {args.tab}. Choose either decisions or documents. Exitiing... "
+        )
+        exit(1)
+
     scraper.load_all_documents_dynamically()
     scraper.parse_loaded_page()
     scraper.update_progress()
@@ -31,6 +38,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", type=str, default=config.DEFAULT_URL)
+    parser.add_argument("--tab", type=str, default="documents")
     parser.add_argument(
         "--headless",
         action="store_true",

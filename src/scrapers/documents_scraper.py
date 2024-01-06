@@ -11,14 +11,14 @@ import time
 logger = setup_logger()
 
 
-class DecisionScraper(Scraper):
+class DocumentScraper(Scraper):
     def __init__(self, driver, progress_csv):
         super().__init__(driver, progress_csv)
 
     def load_all_documents_dynamically(self):
         try:
             driver = self.driver
-            items_per_page_button = driver.find_element(By.ID, "edit-items-per-page--3")
+            items_per_page_button = driver.find_element(By.ID, "edit-items-per-page--4")
             select = Select(items_per_page_button)
             last_index = len(select.options) - 1
             select.select_by_index(last_index)
