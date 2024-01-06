@@ -2,7 +2,7 @@
 
 ## Installation steps
 
-### Geckodriver (mozilla simulator)
+### CHROME driver ()
 
 
 ### Requirements

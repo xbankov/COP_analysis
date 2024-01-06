@@ -2,6 +2,10 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
+from utils.logger import setup_logger
+
+logger = setup_logger()
+
 
 def setup_driver(driver_path, headless):
     # Set up Chrome options (optional: you can add more options as needed)
@@ -16,9 +20,3 @@ def setup_driver(driver_path, headless):
     driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
     driver.implicitly_wait(20)
     return driver
-
-
-class Document:
-    def __init__(self, title, download_url):
-        self.title = title
-        self.download_url = download_url
