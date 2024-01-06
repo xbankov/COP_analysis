@@ -4,5 +4,8 @@
 
 ### CHROME driver ()
 
-
 ### Requirements
+
+## TODO
+
+add view details links to the csv
