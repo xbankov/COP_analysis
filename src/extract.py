@@ -1,4 +1,4 @@
-# src/extract_links.py
+#!/usr/bin/env python
 from scrapers.decisions_scraper import DecisionScraper
 from scrapers.documents_scraper import DocumentScraper
 from utils.logger import setup_logger

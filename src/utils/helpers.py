@@ -39,3 +39,7 @@ def download_pdf(url, filename):
             f"Failed to download file: {filename} with url: {url}. Status Code: {response.status_code}"
         )
     return response.status_code
+
+
+def get_filename(symbol, document_name):
+    return f"{symbol}_{document_name}.pdf"

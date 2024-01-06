@@ -1,11 +1,13 @@
-# src/download_pdf.py
+#!/usr/bin/env python
+
+import argparse
 from tqdm import tqdm
 from pathlib import Path
 import config
 import pandas as pd
 import time
 
-from utils.helpers import download_pdf, setup_logger
+from utils.helpers import download_pdf, get_filename, setup_logger
 
 logger = setup_logger()
 
@@ -26,7 +28,7 @@ def main():
         document_name = row["DocumentName"]
         url = row["DownloadUrl"]
 
-        filename = Path(config.DEFAULT_PDF_PATH) / f"{symbol}_{document_name}.pdf"
+        filename = Path(config.DEFAULT_PDF_PATH) / get_filename(symbol, document_name)
 
         try:
             status = download_pdf(url, filename)
@@ -34,7 +36,7 @@ def main():
                 logger.warn(f"Request failed with status code: {status}")
             if status == 200:
                 status = "Downloaded"
-            
+
         except Exception as e:
             logger.warn(e)
         progress_csv.iloc[index]["Status"] = status
@@ -48,4 +50,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--tab", type=str, default="documents")
+    parser.add_argument(
+        "--progress_csv", type=str, default=config.DEFAULT_PROGRESS_CSV_PATH
+    )
+
+    main(parser.parse_args())

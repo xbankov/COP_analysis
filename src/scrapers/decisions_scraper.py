@@ -75,7 +75,8 @@ class DecisionScraper(Scraper):
                     "Body": cols[2].getText().strip().replace(" ", "_"),
                     "Date": cols[3].getText().strip().replace(" ", "."),
                     "DownloadUrl": self.get_eng_url_from_td(cols[4]),
-                    "Status": "Not Downloaded",
+                    "DownloadStatus": "Not Downloaded",
+                    "UploadStatus": "Not Uploaded",
                 }
                 for document in documents
                 for cols in [document.find_all("td")]
@@ -83,6 +84,8 @@ class DecisionScraper(Scraper):
         )
 
     def update_progress(self):
+        if not self.progress_csv.parent.exists():
+            self.progress_csv.parent.mkdir(exist_ok=True, parents=True)
         if not self.progress_csv.exists():
             df = pd.DataFrame(
                 columns=[
@@ -90,7 +93,8 @@ class DecisionScraper(Scraper):
                     "DocumentName",
                     "Body",
                     "Date",
-                    "Status",
+                    "DownloadStatus",
+                    "UploadStatus",
                     "DownloadUrl",
                 ]
             )
@@ -118,7 +122,12 @@ class DecisionScraper(Scraper):
                 "DocumentName": merged_df["DocumentName"],
                 "Date": merged_df["Date"],
                 "Body": merged_df["Body"],
-                "Status": merged_df["Status_df1"].fillna(merged_df["Status_df2"]),
+                "DownloadStatus": merged_df["DownloadStatus_df1"].fillna(
+                    merged_df["DownloadStatus_df2"]
+                ),
+                "UploadStatus": merged_df["UploadStatus_df1"].fillna(
+                    merged_df["UploadStatus_df2"]
+                ),
                 "DownloadUrl": merged_df["DownloadUrl_df1"].fillna(
                     merged_df["DownloadUrl_df2"]
                 ),

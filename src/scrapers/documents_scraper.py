@@ -1,4 +1,5 @@
 # src/scrapers/scraper1.py
+from genericpath import exists
 import bs4
 import pandas as pd
 from scrapers.scraper import Scraper
@@ -26,10 +27,16 @@ class DocumentScraper(Scraper):
             self.wait_for_loading()
 
             total_documents = int(
-                driver.find_elements(By.CSS_SELECTOR, "span.totalresults")[-1].text
+                driver.find_element(
+                    By.CSS_SELECTOR,
+                    "div.block-views-blockdocuments-block-1 span.totalresults",
+                ).text
             )
             shown_documents = int(
-                driver.find_elements(By.CSS_SELECTOR, "span.endresults")[-1].text
+                driver.find_element(
+                    By.CSS_SELECTOR,
+                    "div.block-views-blockdocuments-block-1 span.endresults",
+                ).text
             )
 
             while shown_documents < total_documents:
@@ -40,7 +47,7 @@ class DocumentScraper(Scraper):
 
                 load_more_button = driver.find_element(
                     By.CSS_SELECTOR,
-                    'div.block-views-blockdecisions-block-1 a.button[title="Load more items"]',
+                    'div.block-views-blockdocuments-block-1  a.button[title="Load more items"]',
                 )
                 load_more_button.click()
 
@@ -49,7 +56,7 @@ class DocumentScraper(Scraper):
                 shown_documents = int(
                     driver.find_element(
                         By.CSS_SELECTOR,
-                        "div.block-views-blockdecisions-block-1 span.endresults",
+                        "div.block-views-blockdocuments-block-1 span.endresults",
                     ).text
                 )
             logger.info("All documents loaded")
@@ -61,7 +68,7 @@ class DocumentScraper(Scraper):
         soup = bs4.BeautifulSoup(self.html_content, "lxml")
         documents = soup.find_all("tr")[1:]
         logger.info(f"Number of TR elements {len(documents)}")
-
+        documents[0].find_all("td")[4].getText().strip().replace("/", "_")
         # Using a list comprehension to create download_progress directly
         self.download_progress = pd.DataFrame(
             [
@@ -72,10 +79,11 @@ class DocumentScraper(Scraper):
                     .strip()
                     .replace(" ", "_")
                     .replace("/", "_"),
-                    "Body": cols[2].getText().strip().replace(" ", "_"),
+                    "DocumentType": cols[2].getText().strip().replace(" ", "_"),
                     "Date": cols[3].getText().strip().replace(" ", "."),
                     "DownloadUrl": self.get_eng_url_from_td(cols[4]),
-                    "Status": "Not Downloaded",
+                    "DownloadStatus": "Not Downloaded",
+                    "UploadStatus": "Not Uploaded",
                 }
                 for document in documents
                 for cols in [document.find_all("td")]
@@ -83,24 +91,28 @@ class DocumentScraper(Scraper):
         )
 
     def update_progress(self):
+        if not self.progress_csv.parent.exists():
+            self.progress_csv.parent.mkdir(exist_ok=True, parents=True)
+
         if not self.progress_csv.exists():
             df = pd.DataFrame(
                 columns=[
                     "Symbol",
                     "DocumentName",
-                    "Body",
+                    "DocumentType",
                     "Date",
-                    "Status",
+                    "DownloadStatus",
+                    "UploadStatus",
                     "DownloadUrl",
                 ]
             )
-            df.to_csv(self.progress_csv, index=None)
+            df.to_csv(self.progress_csv)
 
         df1 = pd.read_csv(self.progress_csv)
         df2 = self.download_progress
 
         # Identify the columns to keep
-        common_columns = ["Symbol", "DocumentName", "Body", "Date"]
+        common_columns = ["Symbol", "DocumentName", "DocumentType", "Date"]
 
         # Merge df2 into df1 based on the unique identifier columns
         merged_df = pd.merge(
@@ -117,8 +129,13 @@ class DocumentScraper(Scraper):
                 "Symbol": merged_df["Symbol"],
                 "DocumentName": merged_df["DocumentName"],
                 "Date": merged_df["Date"],
-                "Body": merged_df["Body"],
-                "Status": merged_df["Status_df1"].fillna(merged_df["Status_df2"]),
+                "DocumentType": merged_df["DocumentType"],
+                "DownloadStatus": merged_df["DownloadStatus_df1"].fillna(
+                    merged_df["DownloadStatus_df2"]
+                ),
+                "UploadStatus": merged_df["UploadStatus_df1"].fillna(
+                    merged_df["UploadStatus_df2"]
+                ),
                 "DownloadUrl": merged_df["DownloadUrl_df1"].fillna(
                     merged_df["DownloadUrl_df2"]
                 ),
