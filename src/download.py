@@ -12,15 +12,15 @@ from utils.helpers import download_pdf, get_filename, setup_logger
 logger = setup_logger()
 
 
-def main():
+def main(args):
     # SETUP
     start_time = time.time()
 
-    if not Path(config.DEFAULT_PROGRESS_CSV_PATH).exists():
+    if not Path(args.progress_csv).exists():
         logger.error("There is no progress csv with links to download")
         exit(1)
 
-    progress_csv = pd.read_csv(config.DEFAULT_PROGRESS_CSV_PATH)
+    progress_csv = pd.read_csv(args.progress_csv)
     not_downloaded = progress_csv[progress_csv["Status"] != "Downloaded"]
 
     for index, row in tqdm(not_downloaded.iterrows(), total=len(not_downloaded)):
@@ -28,7 +28,7 @@ def main():
         document_name = row["DocumentName"]
         url = row["DownloadUrl"]
 
-        filename = Path(config.DEFAULT_PDF_PATH) / get_filename(symbol, document_name)
+        filename = Path(args.data_folder) / get_filename(symbol, document_name)
 
         try:
             status = download_pdf(url, filename)
@@ -40,7 +40,7 @@ def main():
         except Exception as e:
             logger.warn(e)
         progress_csv.iloc[index]["Status"] = status
-        progress_csv.to_csv(config.DEFAULT_PROGRESS_CSV_PATH, index=None)
+        progress_csv.to_csv(args.progress_csv, index=None)
 
         time.sleep(10)
 
@@ -55,5 +55,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--progress_csv", type=str, default=config.DEFAULT_PROGRESS_CSV_PATH
     )
+    parser.add_argument("--data_folder", type=str, default=config.DEFAULT_PDF_PATH)
 
     main(parser.parse_args())

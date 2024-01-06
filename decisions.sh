@@ -5,4 +5,3 @@ mkdir -p $DATA_FOLDER
 
 src/extract.py --progress_csv $DATA_FOLDER/progress.csv --tab decisions --url $URL
 src/download.py --progress_csv $DATA_FOLDER/progress.csv
-# ./upload.py --progress_csv $DATA_FOLDER/progress.csv
