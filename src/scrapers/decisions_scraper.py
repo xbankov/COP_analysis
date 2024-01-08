@@ -75,7 +75,6 @@ class DecisionScraper(Scraper):
                     "DownloadUrl": get_eng_url_from_td(cols[4]),
                     "DocumentUrl": urljoin(self.base_url, cols[4].find("a")["href"]),
                     "DownloadStatus": "Not Downloaded",
-
                 }
                 for document in documents
                 for cols in [document.find_all("td")]
@@ -103,7 +102,7 @@ class DecisionScraper(Scraper):
         df2 = self.download_progress
 
         # Identify the columns to keep
-        common_columns = ["Symbol", "DocumentName", "Body", "Date"]
+        common_columns = ["Symbol", "DocumentName", "Body", "Date", "DocumentUrl"]
 
         # Merge df2 into df1 based on the unique identifier columns
         merged_df = pd.merge(
