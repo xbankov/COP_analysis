@@ -1,11 +1,29 @@
 # COP_analysis
+Create a databank from official and unofficial documents from global climate conferences in recent years by scraping their official website (in a considering time between requests) and analyzing the documents to comment on topics and trends discussed and focused on. 
 
 ## Installation steps
 
-### CHROME driver ()
+### Install Conda
 
-### Requirements
+`conda create -n copscraper python=3.11.5`
 
-## TODO
+`conda activate copscraper`
 
-add view details links to the csv
+### Install python packages
+
+`pip install -r requirements.txt`
+
+## Run steps
+
+### Extract&Download bash script with arguments:
+
+- ./decisions.sh - parses decisions url with specific format and downloads files stored in progress_csv with default download_path
+- ./documents.sh - parses documents url with specific format and downloads files stored in progress_csv with default download_path
+
+### Extract
+
+- extract progress_csv, see code for arguments
+
+### Download
+
+- download pdf not downloaded yet from progress_csv, see code for arguments

@@ -1,11 +1,6 @@
 requests
-PyMuPDF
 pandas
 beautifulsoup4
 lxml
-torch
 selenium
-transformers
 tqdm
-wordcloud
-matplotlib
