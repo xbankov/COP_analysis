@@ -39,7 +39,7 @@ def main(args):
 
         except Exception as e:
             logger.warn(e)
-        progress_csv.iloc[index]["DownloadStatus"] = status
+            progress_csv.iloc[index]["DownloadStatus"] = status
         progress_csv.to_csv(args.progress_csv, index=None)
 
         time.sleep(10)
@@ -51,10 +51,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tab", type=str, default="documents")
-    parser.add_argument(
-        "--progress_csv", type=str, default=config.DEFAULT_PROGRESS_CSV_PATH
-    )
-    parser.add_argument("--data_folder", type=str, default=config.DEFAULT_PDF_PATH)
+    parser.add_argument("--tab", type=str)
+    parser.add_argument("--progress_csv", type=str)
+    parser.add_argument("--data_folder", type=str)
 
     main(parser.parse_args())

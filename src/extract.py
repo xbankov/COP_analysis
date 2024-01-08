@@ -37,16 +37,10 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--url", type=str, default=config.DEFAULT_URL)
-    parser.add_argument("--tab", type=str, default="documents")
-    parser.add_argument(
-        "--headless",
-        action="store_true",
-        default=config.DEFAULT_HEADLESS,
-    )
+    parser.add_argument("--url", type=str)
+    parser.add_argument("--tab", type=str)
+    parser.add_argument("--headless", action="store_true")
+    parser.add_argument("--progress_csv", type=str)
     parser.add_argument("--driver_path", type=str, default=config.DEFAULT_DRIVER_PATH)
-    parser.add_argument(
-        "--progress_csv", type=str, default=config.DEFAULT_PROGRESS_CSV_PATH
-    )
 
     main(parser.parse_args())
