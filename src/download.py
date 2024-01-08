@@ -21,7 +21,7 @@ def main(args):
         exit(1)
 
     progress_csv = pd.read_csv(args.progress_csv)
-    not_downloaded = progress_csv[progress_csv["Status"] != "Downloaded"]
+    not_downloaded = progress_csv[progress_csv["DownloadStatus"] != "Downloaded"]
 
     for index, row in tqdm(not_downloaded.iterrows(), total=len(not_downloaded)):
         symbol = row["Symbol"]
@@ -39,7 +39,7 @@ def main(args):
 
         except Exception as e:
             logger.warn(e)
-        progress_csv.iloc[index]["Status"] = status
+        progress_csv.iloc[index]["DownloadStatus"] = status
         progress_csv.to_csv(args.progress_csv, index=None)
 
         time.sleep(10)

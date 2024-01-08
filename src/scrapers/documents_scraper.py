@@ -1,11 +1,12 @@
 # src/scrapers/scraper1.py
-from genericpath import exists
 import bs4
 import pandas as pd
 from scrapers.scraper import Scraper
+from scrapers.parsing import get_eng_url_from_td, parse_date, parse_text
 from utils.logger import setup_logger
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
+from urllib.parse import urljoin
 import time
 
 
@@ -19,6 +20,8 @@ class DocumentScraper(Scraper):
     def load_all_documents_dynamically(self):
         try:
             driver = self.driver
+
+            logger.info("Select maximum items per page")
             items_per_page_button = driver.find_element(By.ID, "edit-items-per-page--4")
             select = Select(items_per_page_button)
             last_index = len(select.options) - 1
@@ -40,8 +43,7 @@ class DocumentScraper(Scraper):
             )
 
             while shown_documents < total_documents:
-                logger.info(f"{shown_documents}/{total_documents}")
-
+                logger.info("Scrolling down")
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 time.sleep(3)
 
@@ -49,6 +51,7 @@ class DocumentScraper(Scraper):
                     By.CSS_SELECTOR,
                     'div.block-views-blockdocuments-block-1  a.button[title="Load more items"]',
                 )
+                logger.info("Click the 'Load more items'")
                 load_more_button.click()
 
                 self.wait_for_loading()
@@ -59,6 +62,7 @@ class DocumentScraper(Scraper):
                         "div.block-views-blockdocuments-block-1 span.endresults",
                     ).text
                 )
+                logger.info(f"[{shown_documents}/{total_documents}] documents loaded")
             logger.info("All documents loaded")
             self.html_content = driver.page_source
         finally:
@@ -68,22 +72,17 @@ class DocumentScraper(Scraper):
         soup = bs4.BeautifulSoup(self.html_content, "lxml")
         documents = soup.find_all("tr")[1:]
         logger.info(f"Number of TR elements {len(documents)}")
-        documents[0].find_all("td")[4].getText().strip().replace("/", "_")
-        # Using a list comprehension to create download_progress directly
+
         self.download_progress = pd.DataFrame(
             [
                 {
-                    "Symbol": cols[0].getText().strip().replace("/", "_"),
-                    "DocumentName": cols[1]
-                    .getText()
-                    .strip()
-                    .replace(" ", "_")
-                    .replace("/", "_"),
-                    "DocumentType": cols[2].getText().strip().replace(" ", "_"),
-                    "Date": cols[3].getText().strip().replace(" ", "."),
-                    "DownloadUrl": self.get_eng_url_from_td(cols[4]),
+                    "Symbol": parse_text(cols[0].getText()),
+                    "DocumentName": parse_text(cols[1].getText()),
+                    "DocumentType": parse_text(cols[2].getText()),
+                    "Date": parse_date(cols[3].getText()),
+                    "DownloadUrl": get_eng_url_from_td(cols[4]),
+                    "DocumentUrl": urljoin(self.base_url, cols[4].find("a")["href"]),
                     "DownloadStatus": "Not Downloaded",
-                    "UploadStatus": "Not Uploaded",
                 }
                 for document in documents
                 for cols in [document.find_all("td")]
@@ -102,8 +101,8 @@ class DocumentScraper(Scraper):
                     "DocumentType",
                     "Date",
                     "DownloadStatus",
-                    "UploadStatus",
                     "DownloadUrl",
+                    "DocumentUrl",
                 ]
             )
             df.to_csv(self.progress_csv)
@@ -112,7 +111,13 @@ class DocumentScraper(Scraper):
         df2 = self.download_progress
 
         # Identify the columns to keep
-        common_columns = ["Symbol", "DocumentName", "DocumentType", "Date"]
+        common_columns = [
+            "Symbol",
+            "DocumentName",
+            "DocumentType",
+            "Date",
+            "DocumentUrl",
+        ]
 
         # Merge df2 into df1 based on the unique identifier columns
         merged_df = pd.merge(
@@ -130,11 +135,9 @@ class DocumentScraper(Scraper):
                 "DocumentName": merged_df["DocumentName"],
                 "Date": merged_df["Date"],
                 "DocumentType": merged_df["DocumentType"],
+                "DocumentUrl": merged_df["DocumentUrl"],
                 "DownloadStatus": merged_df["DownloadStatus_df1"].fillna(
                     merged_df["DownloadStatus_df2"]
-                ),
-                "UploadStatus": merged_df["UploadStatus_df1"].fillna(
-                    merged_df["UploadStatus_df2"]
                 ),
                 "DownloadUrl": merged_df["DownloadUrl_df1"].fillna(
                     merged_df["DownloadUrl_df2"]

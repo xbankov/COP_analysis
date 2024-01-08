@@ -1,7 +1,9 @@
 # src/scrapers/scraper1.py
+from urllib.parse import urljoin
 import bs4
 import pandas as pd
 from scrapers.scraper import Scraper
+from scrapers.parsing import get_eng_url_from_td, parse_date, parse_text
 from utils.logger import setup_logger
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
@@ -66,17 +68,14 @@ class DecisionScraper(Scraper):
         self.download_progress = pd.DataFrame(
             [
                 {
-                    "Symbol": cols[0].getText().strip().replace("/", "_"),
-                    "DocumentName": cols[1]
-                    .getText()
-                    .strip()
-                    .replace(" ", "_")
-                    .replace("/", "_"),
-                    "Body": cols[2].getText().strip().replace(" ", "_"),
-                    "Date": cols[3].getText().strip().replace(" ", "."),
-                    "DownloadUrl": self.get_eng_url_from_td(cols[4]),
+                    "Symbol": parse_text(cols[0].getText()),
+                    "DocumentName": parse_text(cols[1].getText()),
+                    "Body": parse_text(cols[2].getText()),
+                    "Date": parse_date(cols[3].getText()),
+                    "DownloadUrl": get_eng_url_from_td(cols[4]),
+                    "DocumentUrl": urljoin(self.base_url, cols[4].find("a")["href"]),
                     "DownloadStatus": "Not Downloaded",
-                    "UploadStatus": "Not Uploaded",
+
                 }
                 for document in documents
                 for cols in [document.find_all("td")]
@@ -94,8 +93,8 @@ class DecisionScraper(Scraper):
                     "Body",
                     "Date",
                     "DownloadStatus",
-                    "UploadStatus",
                     "DownloadUrl",
+                    "DocumentUrl",
                 ]
             )
             df.to_csv(self.progress_csv, index=None)
@@ -122,11 +121,9 @@ class DecisionScraper(Scraper):
                 "DocumentName": merged_df["DocumentName"],
                 "Date": merged_df["Date"],
                 "Body": merged_df["Body"],
+                "DocumentUrl": merged_df["DocumentUrl"],
                 "DownloadStatus": merged_df["DownloadStatus_df1"].fillna(
                     merged_df["DownloadStatus_df2"]
-                ),
-                "UploadStatus": merged_df["UploadStatus_df1"].fillna(
-                    merged_df["UploadStatus_df2"]
                 ),
                 "DownloadUrl": merged_df["DownloadUrl_df1"].fillna(
                     merged_df["DownloadUrl_df2"]
