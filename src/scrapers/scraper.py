@@ -20,7 +20,7 @@ class Scraper:
     def scroll_and_wait(self):
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         self.wait_for_scrolling()
-        time.sleep(3)
+        time.sleep(1)
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         self.wait_for_scrolling()
 
