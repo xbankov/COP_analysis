@@ -7,7 +7,6 @@ from utils.logger import setup_logger
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from urllib.parse import urljoin
-import time
 
 
 logger = setup_logger()
@@ -44,9 +43,8 @@ class DocumentScraper(Scraper):
 
             while shown_documents < total_documents:
                 logger.info("Scrolling down")
-                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                
-                self.wait_for_scrolling()
+
+                self.scroll_and_wait()
 
                 load_more_button = driver.find_element(
                     By.CSS_SELECTOR,

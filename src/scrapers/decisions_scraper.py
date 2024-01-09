@@ -7,7 +7,6 @@ from scrapers.parsing import get_eng_url_from_td, parse_date, parse_text
 from utils.logger import setup_logger
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
-import time
 
 
 logger = setup_logger()
@@ -37,8 +36,7 @@ class DecisionScraper(Scraper):
             while shown_documents < total_documents:
                 logger.info(f"{shown_documents}/{total_documents}")
 
-                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                self.wait_for_scrolling()
+                self.scroll_and_wait()
 
                 load_more_button = driver.find_element(
                     By.CSS_SELECTOR,

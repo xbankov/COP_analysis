@@ -1,3 +1,4 @@
+import time
 from utils.logger import setup_logger
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -16,11 +17,18 @@ class Scraper:
         self.progress_csv = Path(progress_csv)
         self.base_url = driver.current_url
 
+    def scroll_and_wait(self):
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        self.wait_for_scrolling()
+        time.sleep(3)
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        self.wait_for_scrolling()
+
     def wait_for_scrolling(self):
         # Wait for the scrolling to complete
         try:
             # Set a timeout based on how long you expect the scrolling to take
-            timeout = 10
+            timeout = 5
             # Use WebDriverWait to wait until the page has scrolled to the bottom
             WebDriverWait(self.driver, timeout).until(
                 lambda driver: driver.execute_script(

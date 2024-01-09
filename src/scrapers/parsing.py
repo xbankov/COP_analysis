@@ -8,7 +8,7 @@ def get_eng_url_from_td(td):
             "option", string=re.compile("english", re.IGNORECASE)
         )
         return english_option["value"]
-    except NameError:
+    except TypeError:
         return "NOT_ENG"
 
 
