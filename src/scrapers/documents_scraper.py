@@ -45,7 +45,8 @@ class DocumentScraper(Scraper):
             while shown_documents < total_documents:
                 logger.info("Scrolling down")
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(3)
+                
+                self.wait_for_scrolling()
 
                 load_more_button = driver.find_element(
                     By.CSS_SELECTOR,

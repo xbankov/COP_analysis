@@ -1,9 +1,8 @@
-import re
-import pandas as pd
 from utils.logger import setup_logger
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 from utils.logger import setup_logger
 from pathlib import Path
 
@@ -16,6 +15,20 @@ class Scraper:
         self.html_content = None
         self.progress_csv = Path(progress_csv)
         self.base_url = driver.current_url
+
+    def wait_for_scrolling(self):
+        # Wait for the scrolling to complete
+        try:
+            # Set a timeout based on how long you expect the scrolling to take
+            timeout = 10
+            # Use WebDriverWait to wait until the page has scrolled to the bottom
+            WebDriverWait(self.driver, timeout).until(
+                lambda driver: driver.execute_script(
+                    "return window.scrollY + window.innerHeight >= document.body.scrollHeight;"
+                )
+            )
+        except TimeoutException:
+            print("Timeout waiting for scrolling to complete")
 
     def wait_for_loading(self):
         # Wait until the loading div element appears
