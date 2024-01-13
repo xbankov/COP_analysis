@@ -1,7 +1,8 @@
 # COP_analysis
-Create a databank from official and unofficial documents from global climate conferences in recent years by scraping their official website (in a considering time between requests) and analyzing the documents to comment on topics and trends discussed and focused on. 
 
-Databank is store at: https://drive.google.com/drive/u/0/folders/10uDRjYWxMBosoL_bfs8gwxFg0dVcyyfA
+Create a databank from official and unofficial documents from global climate conferences in recent years by scraping their official website (in a considering time between requests) and analyzing the documents to comment on topics and trends discussed and focused on.
+
+Databank is stored at: https://drive.google.com/drive/u/0/folders/10uDRjYWxMBosoL_bfs8gwxFg0dVcyyfA
 
 ## Installation steps
 
@@ -28,4 +29,4 @@ Databank is store at: https://drive.google.com/drive/u/0/folders/10uDRjYWxMBosoL
 
 ### Download
 
-- download pdf not downloaded yet from progress_csv, see code for arguments
+- download pdf that have not yet been downloaded given the progress_csv, see code for arguments
