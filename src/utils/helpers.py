@@ -16,17 +16,24 @@ def setup_driver(driver_path, headless):
         chrome_options.add_argument(
             "--headless"
         )  # Run Chrome in headless mode (no GUI)
+        chrome_options.add_argument("--window-size=1920x1080")
+
     chrome_service = Service(driver_path)
 
     # Initialize the Chrome brexecutable_pathowser
     driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
     driver.implicitly_wait(20)
+
+    logger.info("Chrome driver initialized with parameters:")
+    logger.info(f"Driver path: {driver_path}")
+    logger.info(f"Headless: {headless}")
+    logger.info(f"Default window-size: 1920x1080")
+
     return driver
 
 
 def download_pdf(url, filename):
     headers = config.DEFAULT_HEADERS
-
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
@@ -35,7 +42,7 @@ def download_pdf(url, filename):
             pdf_file.write(response.content)
         logger.info(f"Downloaded: {url}")
     else:
-        logger.info(
+        logger.error(
             f"Failed to download file: {filename} with url: {url}. Status Code: {response.status_code}"
         )
     return response.status_code

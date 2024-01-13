@@ -15,47 +15,8 @@ logger = setup_logger()
 class DecisionScraper(Scraper):
     def __init__(self, driver, progress_csv):
         super().__init__(driver, progress_csv)
-
-    def load_all_documents_dynamically(self):
-        try:
-            driver = self.driver
-            items_per_page_button = driver.find_element(By.ID, "edit-items-per-page--3")
-            select = Select(items_per_page_button)
-            last_index = len(select.options) - 1
-            select.select_by_index(last_index)
-
-            self.wait_for_loading()
-
-            total_documents = int(
-                driver.find_elements(By.CSS_SELECTOR, "span.totalresults")[-1].text
-            )
-            shown_documents = int(
-                driver.find_elements(By.CSS_SELECTOR, "span.endresults")[-1].text
-            )
-
-            while shown_documents < total_documents:
-                logger.info(f"{shown_documents}/{total_documents}")
-
-                self.scroll_and_wait()
-
-                load_more_button = driver.find_element(
-                    By.CSS_SELECTOR,
-                    'div.block-views-blockdecisions-block-1 a.button[title="Load more items"]',
-                )
-                load_more_button.click()
-
-                self.wait_for_loading()
-
-                shown_documents = int(
-                    driver.find_element(
-                        By.CSS_SELECTOR,
-                        "div.block-views-blockdecisions-block-1 span.endresults",
-                    ).text
-                )
-            logger.info("All documents loaded")
-            self.html_content = driver.page_source
-        finally:
-            driver.quit()
+        self.button_id = "edit-items-per-page--3"
+        self.total_span_class = "div.block-views-blockdecisions-block-1"
 
     def parse_loaded_page(self):
         soup = bs4.BeautifulSoup(self.html_content, "lxml")
@@ -127,5 +88,4 @@ class DecisionScraper(Scraper):
                 ),
             }
         )
-
         result_df.to_csv(self.progress_csv, index=None)

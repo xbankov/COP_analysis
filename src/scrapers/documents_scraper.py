@@ -1,11 +1,14 @@
 # src/scrapers/scraper1.py
+import time
 import bs4
 import pandas as pd
 from scrapers.scraper import Scraper
 from scrapers.parsing import get_eng_url_from_td, parse_date, parse_text
 from utils.logger import setup_logger
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
+
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from urllib.parse import urljoin
 
 
@@ -15,57 +18,8 @@ logger = setup_logger()
 class DocumentScraper(Scraper):
     def __init__(self, driver, progress_csv):
         super().__init__(driver, progress_csv)
-
-    def load_all_documents_dynamically(self):
-        try:
-            driver = self.driver
-
-            logger.info("Select maximum items per page")
-            items_per_page_button = driver.find_element(By.ID, "edit-items-per-page--4")
-            select = Select(items_per_page_button)
-            last_index = len(select.options) - 1
-            select.select_by_index(last_index)
-
-            self.wait_for_loading()
-
-            total_documents = int(
-                driver.find_element(
-                    By.CSS_SELECTOR,
-                    "div.block-views-blockdocuments-block-1 span.totalresults",
-                ).text
-            )
-            shown_documents = int(
-                driver.find_element(
-                    By.CSS_SELECTOR,
-                    "div.block-views-blockdocuments-block-1 span.endresults",
-                ).text
-            )
-
-            while shown_documents < total_documents:
-                logger.info("Scrolling down")
-
-                self.scroll_and_wait()
-
-                load_more_button = driver.find_element(
-                    By.CSS_SELECTOR,
-                    'div.block-views-blockdocuments-block-1  a.button[title="Load more items"]',
-                )
-                logger.info("Click the 'Load more items'")
-                load_more_button.click()
-
-                self.wait_for_loading()
-
-                shown_documents = int(
-                    driver.find_element(
-                        By.CSS_SELECTOR,
-                        "div.block-views-blockdocuments-block-1 span.endresults",
-                    ).text
-                )
-                logger.info(f"[{shown_documents}/{total_documents}] documents loaded")
-            logger.info("All documents loaded")
-            self.html_content = driver.page_source
-        finally:
-            driver.quit()
+        self.button_id = "edit-items-per-page--4"
+        self.total_span_class = "div.block-views-blockdocuments-block-1"
 
     def parse_loaded_page(self):
         soup = bs4.BeautifulSoup(self.html_content, "lxml")
@@ -111,11 +65,9 @@ class DocumentScraper(Scraper):
 
         # Identify the columns to keep
         common_columns = [
-            "Symbol",
             "DocumentName",
             "DocumentType",
             "Date",
-            "DocumentUrl",
         ]
 
         # Merge df2 into df1 based on the unique identifier columns
@@ -130,11 +82,11 @@ class DocumentScraper(Scraper):
 
         result_df = pd.DataFrame(
             {
-                "Symbol": merged_df["Symbol"],
+                "Symbol": merged_df["Symbol_df1"].fillna(merged_df["Symbol_df2"]),
                 "DocumentName": merged_df["DocumentName"],
                 "Date": merged_df["Date"],
                 "DocumentType": merged_df["DocumentType"],
-                "DocumentUrl": merged_df["DocumentUrl"],
+                "DocumentUrl": merged_df["DocumentUrl_df1"],
                 "DownloadStatus": merged_df["DownloadStatus_df1"].fillna(
                     merged_df["DownloadStatus_df2"]
                 ),

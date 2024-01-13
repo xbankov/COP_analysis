@@ -17,6 +17,7 @@ def main(args):
     # ACTION
     driver.get(url=args.url)
 
+    time.sleep(1)
     if args.tab == "decisions":
         scraper = DecisionScraper(driver, args.progress_csv)
     elif args.tab == "documents":
@@ -30,10 +31,10 @@ def main(args):
     scraper.load_all_documents_dynamically()
     scraper.parse_loaded_page()
     scraper.update_progress()
+    scraper.report()
 
     end_time = time.time()
     logger.info(f"Finished in: {end_time - start_time} seconds")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
