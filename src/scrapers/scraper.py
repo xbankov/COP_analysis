@@ -1,33 +1,50 @@
-import time
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+from utils.helpers import setup_driver
 from utils.logger import setup_logger
-from pathlib import Path
 from abc import ABC, abstractmethod
+from pathlib import Path
 import pandas as pd
+import time
+
+import config
 
 logger = setup_logger()
 
 
 class Scraper(ABC):
-    def __init__(self, driver, progress_csv):
-        self.driver = driver
+    def __init__(self, url, data_csv, current_html):
+        self.current_html = Path(current_html)
+        self.data_csv = Path(data_csv)
+        self.url = url
+
+        self._initialize_driver()
+
+        self.base_url = self.driver.current_url
         self.html_content = None
-        self.progress_csv = Path(progress_csv)
-        self.base_url = driver.current_url
 
     @abstractmethod
-    def parse_loaded_page(self):
+    def parse_html(self):
         pass
 
     @abstractmethod
-    def update_progress(self):
+    def resolve_duplicates(self):
         pass
+
+    def load_and_parse(self):
+        self._load_and_download_html()
+        self.parse_html()
+        self.resolve_duplicates()
+        self.save_data()
+        self.report()
+
+    def save_data(self):
+        self.data.to_csv(self.data_csv, index=False)
 
     def report(self):
-        df = pd.read_csv(self.progress_csv)
+        df = pd.read_csv(self.data_csv)
 
         NOT_ENG = (df["DownloadUrl"] == "NOT_ENG").sum()
         NOT_DOC = (df["DownloadUrl"] == "NOT_DOC").sum()
@@ -37,69 +54,89 @@ class Scraper(ABC):
         logger.info(f"Total NO DOCUMENT documents: {NOT_DOC}")
         logger.info(f"Total of downloadable documents: {len(df) - NOT_ENG - NOT_DOC}")
 
-    def load_all_documents_dynamically(self):
+    def _load_documents(self):
+        total_documents = self._get_total_documents()
+        shown_documents = self._get_shown_documents()
+
+        while shown_documents < total_documents:
+            logger.info(f"{shown_documents}/{total_documents} documents loaded")
+            self._scroll_and_wait()
+            self._click_load_more_items()
+            self._wait_for_loading()
+            shown_documents = self._get_shown_documents()
+
+        logger.info("All documents loaded")
+        self.html_content = self.driver.page_source
+        self._write_html_to_file()
+
+    def _initialize_driver(self):
+        self.driver = setup_driver(config.DEFAULT_DRIVER_PATH, config.HEADLESS)
+        self.driver.get(self.url)
+        self.driver.maximize_window()
+
+    def _initialize_page(self):
+        self._select_item_per_page()
+        self._wait_for_loading()
+
+    def _load_and_download_html(self):
         try:
-            driver = self.driver
-            driver.maximize_window()
-            self.select_item_per_page()
-            self.wait_for_loading()
-
-            total_documents = int(
-                driver.find_element(
-                    By.CSS_SELECTOR, f"{self.total_span_class} span.totalresults"
-                ).text
-            )
-            shown_documents = int(
-                driver.find_element(
-                    By.CSS_SELECTOR, f"{self.total_span_class} span.endresults"
-                ).text
-            )
-
-            while shown_documents < total_documents:
-                logger.info(f"{shown_documents}/{total_documents} documents loaded")
-
-                self.scroll_and_wait()
-
-                load_more_button = driver.find_element(
-                    By.CSS_SELECTOR,
-                    f"{self.total_span_class} a.button[title='Load more items']",
+            if self.current_html.exists():
+                logger.info(f"Saved HTML found: {self.current_html}")
+                self._read_html_from_file()
+            else:
+                logger.info(
+                    f"HTML not found: {self.current_html}. Loading and Downloading HTML"
                 )
-                logger.info("Click load more items")
-                load_more_button.click()
+                self._initialize_page()
+                total_documents = self._get_total_documents()
+                shown_documents = self._get_shown_documents()
 
-                self.wait_for_loading()
+                while shown_documents < total_documents:
+                    logger.info(f"{shown_documents}/{total_documents} documents loaded")
 
-                shown_documents = int(
-                    driver.find_element(
-                        By.CSS_SELECTOR,
-                        f"{self.total_span_class} span.endresults",
-                    ).text
-                )
-            logger.info("All documents loaded")
-            self.html_content = driver.page_source
+                    self._scroll_and_wait()
+                    self._click_load_more_items()
+                    self._wait_for_loading()
+
+                    shown_documents = self._get_shown_documents()
+                logger.info("HTML loaded. Saving HTML")
+                self._write_html_to_file()
+                self._read_html_from_file()
+
+        except Exception as e:
+            # logger.error(self.driver.page_source)
+            logger.error(e)
         finally:
-            driver.quit()
+            self.driver.quit()
 
-    def select_item_per_page(self):
+    def _select_item_per_page(self):
         logger.info("Select maximum item per page")
         items_per_page_button = self.driver.find_element(By.ID, self.button_id)
         select = Select(items_per_page_button)
         last_index = len(select.options) - 1
         select.select_by_index(last_index)
 
-    def scroll_and_wait(self):
+    def _scroll_and_wait(self):
         logger.info("Scroll and wait (multiple times) for button")
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        self.wait_for_scrolling()
+        self._wait_for_scrolling()
         time.sleep(1)
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        self.wait_for_scrolling()
+        self._wait_for_scrolling()
 
-    def wait_for_scrolling(self):
+    def _click_load_more_items(self):
+        load_more_button = self.driver.find_element(
+            By.CSS_SELECTOR,
+            f"{self.total_span_class} a.button[title='Load more items']",
+        )
+        logger.info("Click load more items")
+        load_more_button.click()
+
+    def _wait_for_scrolling(self):
         # Wait for the scrolling to complete
         try:
             # Set a timeout based on how long you expect the scrolling to take
-            timeout = 3
+            timeout = 5
             # Use WebDriverWait to wait until the page has scrolled to the bottom
             WebDriverWait(self.driver, timeout).until(
                 lambda driver: driver.execute_script(
@@ -107,9 +144,9 @@ class Scraper(ABC):
                 )
             )
         except TimeoutException:
-            print("Timeout waiting for scrolling to complete")
+            logger.warning("Timeout waiting for scrolling to complete")
 
-    def wait_for_loading(self):
+    def _wait_for_loading(self):
         # Wait until the loading div element appears
         loading_div = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div.ajax-progress"))
@@ -117,3 +154,26 @@ class Scraper(ABC):
         # Wait until the loading div element disappears
         WebDriverWait(self.driver, 60).until(EC.staleness_of(loading_div))
         logger.info("'Load more items' button available.")
+
+    def _write_html_to_file(self):
+        with open(self.current_html, "w") as f:
+            f.write(self.driver.page_source)
+
+    def _read_html_from_file(self):
+        with open(self.current_html, "r") as f:
+            html_content = f.read()
+        self.html_content = html_content
+
+    def _get_total_documents(self):
+        return int(
+            self.driver.find_element(
+                By.CSS_SELECTOR, f"{self.total_span_class} span.totalresults"
+            ).text
+        )
+
+    def _get_shown_documents(self):
+        return int(
+            self.driver.find_element(
+                By.CSS_SELECTOR, f"{self.total_span_class} span.endresults"
+            ).text
+        )

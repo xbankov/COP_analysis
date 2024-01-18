@@ -1,7 +1,10 @@
+from pathlib import Path
+import fitz  # install using: pip install PyMuPDF
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from tqdm import tqdm
 
 from utils.logger import setup_logger
 import config
@@ -37,7 +40,6 @@ def download_pdf(url, filename):
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-        # Save the PDF content to a local file
         with open(filename, "wb") as pdf_file:
             pdf_file.write(response.content)
         logger.info(f"Downloaded: {url}")
@@ -48,5 +50,43 @@ def download_pdf(url, filename):
     return response.status_code
 
 
-def get_filename(symbol, document_name):
-    return f"{symbol}_{document_name}.pdf"
+def get_pdf_filename(document_name):
+    return f"{document_name}.pdf"
+
+
+def clean_text(data):
+    return (
+        data["Text"]
+        .str[19:]
+        .str.lower()
+        .str.replace("\W", " ", regex=True)
+        .str.replace("\s", " ", regex=True)
+        .str.replace("\s+", " ", regex=True)
+        .str.strip()
+    )
+
+
+def extract_pdfs(data, data_path, data_folder):
+    texts = []
+    for _, row in tqdm(data.iterrows(), total=len(data)):
+        symbol = row["Symbol"]
+        filename = data_folder / get_pdf_filename(symbol)
+        text = extract_text(filename)
+        texts.append(text)
+    data["Text"] = texts
+    data["Text"] = clean_text(data)
+    data.to_csv(data_path, index=False)
+
+
+def extract_text(pdf_filepath):
+    with fitz.open(pdf_filepath) as doc:
+        text = ""
+        for page in doc:
+            text += " " + page.get_text()
+    return text
+
+
+def create_data_folder(data_folder_path):
+    folder_path = Path(data_folder_path)
+    folder_path.mkdir(parents=True, exist_ok=True)
+    return folder_path
