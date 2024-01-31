@@ -20,5 +20,5 @@ YOUTUBE_URLS = {
     "YouTube/SB56": "https://www.youtube.com/playlist?list=PLBcZ22cUY9RIInokbMFmY6b28skN2wQtF",
     "YouTube/COP26": "https://www.youtube.com/playlist?list=PLBcZ22cUY9RL4TEKTBfoLupiqS5n7Kr6c",
 }
-FORCE = {"HTML": False, "PARSE": True, "DOWNLOAD": False, "PDF_EXTRACT": False}
+FORCE = {"HTML": False, "PARSE": False, "DOWNLOAD": False, "PDF_EXTRACT": False}
 langage_prefences = ["english", "french", "arabic"]
