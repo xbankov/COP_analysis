@@ -1,6 +1,7 @@
 from pathlib import Path
 import time
-import fitz  # install using: pip install PyMuPDF
+import fitz
+import pandas as pd  # install using: pip install PyMuPDF
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -93,11 +94,9 @@ def download_files(data, data_path, data_folder, filename_column):
         filename = data_folder / get_pdf_filename(row[filename_column])
 
         if not filename.exists():
-            if url == "NOT_ENG" or url == "NO_DOC":
-                logger.warning(
-                    f"{filename} has no ENG pdf files associated on row: {index}"
-                )
-                status = "-"
+            if pd.isna(url):
+                logger.warning(f"{filename} has no pdf file associated on row: {index}")
+                status = None
             else:
                 was_requested = True
                 status = download_pdf(url, filename)

@@ -57,12 +57,12 @@ class DecisionScraper(Scraper):
 
         # Include the concatenated 'DocumentName' column
         df_grouped["DocumentName"] = (
-            self.data.groupby(["DownloadUrl", "DocumentUrl"])["DocumentName"]
+            self.data.groupby(["DocumentUrl"])["DocumentName"]
             .agg(lambda x: "|".join(x))
             .reset_index()["DocumentName"]
         )
         df_grouped["Symbol"] = (
-            self.data.groupby(["DownloadUrl", "DocumentUrl"])["Symbol"]
+            self.data.groupby(["DocumentUrl"])["Symbol"]
             .agg(lambda x: "|".join(x))
             .reset_index()["Symbol"]
         )
