@@ -33,8 +33,7 @@ class Scraper(ABC):
     def resolve_duplicates(self):
         pass
 
-    def load_and_parse(self):
-        self._load_and_download_html()
+    def parse(self):
         self.parse_html()
         self.resolve_duplicates()
         self.save_data()
@@ -46,13 +45,11 @@ class Scraper(ABC):
     def report(self):
         df = pd.read_csv(self.data_csv)
 
-        NOT_ENG = (df["DownloadUrl"] == "NOT_ENG").sum()
-        NOT_DOC = (df["DownloadUrl"] == "NOT_DOC").sum()
+        logger.info(df.value_counts(subset=["Language"]))
+        missing = (df["DownloadUrl"].isna()).sum()
 
         logger.info(f"Total entries: {len(df)}")
-        logger.info(f"Total NO ENGLISH documents: {NOT_ENG}")
-        logger.info(f"Total NO DOCUMENT documents: {NOT_DOC}")
-        logger.info(f"Total of downloadable documents: {len(df) - NOT_ENG - NOT_DOC}")
+        logger.info(f"Total missing documents: {missing}")
 
     def _load_documents(self):
         total_documents = self._get_total_documents()
@@ -78,7 +75,7 @@ class Scraper(ABC):
         self._select_item_per_page()
         self._wait_for_loading()
 
-    def _load_and_download_html(self):
+    def load_and_download_html(self):
         try:
             if self.current_html.exists():
                 logger.info(f"Saved HTML found: {self.current_html}")

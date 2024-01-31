@@ -1,71 +1,93 @@
 #!/usr/bin/env python
-
 from pathlib import Path
 import pandas as pd
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
-from pytube import Playlist
-from pytube import YouTube
-from tqdm import tqdm
+from pytube import Playlist, YouTube
+from tqdm.auto import tqdm
 import config
-
 from utils.logger import setup_logger
 
 logger = setup_logger()
 
 
 def main():
+    logger.info("##########################################")
+    logger.info("###### DOWNLOAD YOUTUBE TRANSCRIPTS ######")
+    logger.info("##########################################")
+
     for name, playlist_url in config.YOUTUBE_URLS.items():
         playlist = Playlist(playlist_url)
-
         data_folder = Path(config.DEFAULT_DATA_FOLDER) / name
         data_folder.mkdir(parents=True, exist_ok=True)
+        data_filename = data_folder / f"{data_folder.name}_transcripts.csv"
 
-        video_ids = []
-        video_titles = []
-        transcripts = []
-        statuses = []
+        # Read existing data or create an empty DataFrame
+        df = pd.read_csv(data_filename) if data_filename.exists() else pd.DataFrame()
 
         for url in tqdm(playlist):
             yt = YouTube(url)
             video_id = yt.video_id
             video_title = yt.video_id
             transcript = ""
-            status = "Error"
-            try:
-                transcript = YouTubeTranscriptApi.get_transcript(
-                    video_id=video_id, languages=("en",)
-                )
-                transcript_string = " ".join(
-                    [segment["text"] for segment in transcript]
-                )
-                transcript = transcript_string
-                status = "Downloaded"
-            except NoTranscriptFound:
-                logger.warning(f"No transcription for language {'en'}")
-                status = "NO_ENG"
-            except TranscriptsDisabled:
-                logger.warning(f"Transcripts disabled")
-                status = "NO_TRANSCRIPT"
-            except Exception as e:
-                logger.warning(e)
-                logger.warning(type(e))
-                status = "ERROR"
-            finally:
-                video_ids.append(video_id)
-                video_titles.append(video_title)
-                transcripts.append(transcript)
-                statuses.append(status)
+            status = "ERROR"
 
-        df = pd.DataFrame(
-            {
-                "video_id": video_ids,
-                "video_title": video_titles,
-                "transcript": transcripts,
-                "status": statuses,
-            }
-        )
-        df.to_csv(data_folder / f"{data_folder.name}_transcripts.csv", index=False)
+            if not df.empty and video_id in df["video_id"].values:
+                row = df[df["video_id"] == video_id].iloc[0]
+                if row["status"] == "Downloaded":
+                    transcript, status = row["transcript"], "Downloaded"
+
+            if status != "Downloaded":
+                try:
+                    transcript = YouTubeTranscriptApi.get_transcript(
+                        video_id=video_id, languages=("en",)
+                    )
+                    transcript_string = " ".join(
+                        [segment["text"] for segment in transcript]
+                    )
+                    transcript = transcript_string
+                    status = "Downloaded"
+
+                except NoTranscriptFound:
+                    logger.debug(f"No transcription for language 'en'")
+                    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                    for transcript in transcript_list:
+                        for language_dict in transcript.translation_languages:
+                            if language_dict["language_code"] == "en":
+                                translated_transcript = transcript.translate("en")
+                                
+                                transcript = translated_transcript.fetch()
+                                transcript_string = " ".join(
+                                    [segment["text"] for segment in transcript]
+                                )
+                                transcript = transcript_string
+                                status = "Downloaded"
+
+                except TranscriptsDisabled:
+                    logger.warning(f"Transcripts disabled")
+                    status = None
+                except Exception as e:
+                    logger.warning(e)
+                    logger.warning(type(e))
+                    status = "ERROR"
+                finally:
+                    df = pd.concat(
+                        [
+                            df,
+                            pd.DataFrame(
+                                {
+                                    "video_id": [video_id],
+                                    "video_title": [video_title],
+                                    "transcript": [transcript],
+                                    "status": [status],
+                                }
+                            ),
+                        ],
+                        ignore_index=True,
+                    )
+
+                    # Save DataFrame to CSV after each row if needed
+                    df.to_csv(data_filename, index=False)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 from pathlib import Path
+import time
 import fitz  # install using: pip install PyMuPDF
 import requests
 from selenium import webdriver
@@ -66,16 +67,51 @@ def clean_text(data):
     )
 
 
-def extract_pdfs(data, data_path, data_folder):
+def extract_pdfs(data, data_path, data_folder, filename_column):
     texts = []
     for _, row in tqdm(data.iterrows(), total=len(data)):
-        symbol = row["Symbol"]
-        filename = data_folder / get_pdf_filename(symbol)
-        text = extract_text(filename)
-        texts.append(text)
+        filename = data_folder / get_pdf_filename(row[filename_column])
+        if not filename.exists() and row["DownloadStatus"] == "Downloaded":
+            logger.error(
+                "Inconsistency in db, Status:Downloaded but filename not existing."
+            )
+        if not filename.exists():
+            texts.append("-")
+        else:
+            text = extract_text(filename)
+            texts.append(text)
     data["Text"] = texts
     data["Text"] = clean_text(data)
     data.to_csv(data_path, index=False)
+
+
+def download_files(data, data_path, data_folder, filename_column):
+    for index, row in tqdm(data.iterrows(), total=len(data)):
+        was_requested = False
+        url = row["DownloadUrl"]
+
+        filename = data_folder / get_pdf_filename(row[filename_column])
+
+        if not filename.exists():
+            if url == "NOT_ENG" or url == "NO_DOC":
+                logger.warning(
+                    f"{filename} has no ENG pdf files associated on row: {index}"
+                )
+                status = "-"
+            else:
+                was_requested = True
+                status = download_pdf(url, filename)
+                if status != 200:
+                    logger.error(f"Request failed with status code: {status}")
+                else:
+                    status = "Downloaded"
+
+            data.at[index, "DownloadStatus"] = status
+            data.to_csv(data_path, index=None)
+
+            # Only wait 10 seconds if request was made (To prevent blocking from the unfccc).
+            if was_requested:
+                time.sleep(10)
 
 
 def extract_text(pdf_filepath):

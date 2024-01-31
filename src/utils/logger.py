@@ -1,4 +1,5 @@
 # src/utils/logger.py
+from cgitb import handler
 import logging
 import datetime
 from pathlib import Path
@@ -15,21 +16,24 @@ def setup_logger(log_file=None):
 
     # Check if handlers already exist to avoid duplication
     root_logger = logging.getLogger("")
+    root_logger.setLevel(logging.DEBUG)
+
     if not root_logger.handlers:
-        # Configure the root logger only if no handlers are already configured
-        logging.basicConfig(
-            filename=log_file,
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(filename)s: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.DEBUG)
+        file_formatter = logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(filename)s: %(message)s"
         )
+        file_handler.setFormatter(file_formatter)
 
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.INFO)
-
-        formatter = logging.Formatter("%(levelname)s - %(filename)s: %(message)s")
-        console_handler.setFormatter(formatter)
+        console_formatter = logging.Formatter(
+            "%(levelname)s - %(filename)s: %(message)s"
+        )
+        console_handler.setFormatter(console_formatter)
 
         root_logger.addHandler(console_handler)
+        root_logger.addHandler(file_handler)
 
-    return logging.getLogger(__name__)
+    return root_logger

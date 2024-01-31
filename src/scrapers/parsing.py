@@ -5,19 +5,23 @@ from utils.logger import setup_logger
 logger = setup_logger()
 
 
-def get_eng_url_from_td(td):
+def get_pdf_info_from_td(td):
     try:
         select_element = td.select_one(".select-wrapper select")
         english_option = select_element.find(
             "option", string=re.compile("english", re.IGNORECASE)
         )
-        return english_option["value"]
-    except TypeError:
-        logger.debug("No english pdf found")
-        return "NOT_ENG"
+
+        if english_option:
+            return english_option["value"], english_option.text.split(" ")[0].lower()
+        else:
+            logger.debug("No English PDF found. Trying any other language PDF.")
+            option = select_element.find("option")
+            return option["value"], option.text.split(" ")[0].lower()
+
     except AttributeError:
-        logger.debug("No pdf found")
-        return "NO_DOC"
+        logger.warning("No PDF found.")
+        return None, None
 
 
 def parse_text(text):
