@@ -28,7 +28,7 @@ def main():
 
     base_data_folder = create_data_folder(config.DEFAULT_DATA_FOLDER)
 
-    for name, url in config.DECISION_URLS.items():
+    for name, url in config.DOCUMENT_URLS.items():
         data_folder = base_data_folder / name
         data_folder.mkdir(parents=True, exist_ok=True)
 
