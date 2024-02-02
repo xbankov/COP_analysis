@@ -29,8 +29,8 @@ def main():
             yt = YouTube(url)
             video_id = yt.video_id
             video_title = yt.video_id
-            transcript = ""
-            status = "ERROR"
+            transcript = None
+            status = None
 
             if not df.empty and video_id in df["video_id"].values:
                 row = df[df["video_id"] == video_id].iloc[0]
@@ -50,22 +50,24 @@ def main():
 
                 except NoTranscriptFound:
                     logger.debug(f"No transcription for language 'en'")
-                    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-                    for transcript in transcript_list:
-                        for language_dict in transcript.translation_languages:
-                            if language_dict["language_code"] == "en":
-                                translated_transcript = transcript.translate("en")
-                                
-                                transcript = translated_transcript.fetch()
-                                transcript_string = " ".join(
-                                    [segment["text"] for segment in transcript]
-                                )
-                                transcript = transcript_string
-                                status = "Downloaded"
+                    if config.TRANSLATE_TO_EN:
+                        transcript_list = YouTubeTranscriptApi.list_transcripts(
+                            video_id
+                        )
+                        for transcript in transcript_list:
+                            for language_dict in transcript.translation_languages:
+                                if language_dict["language_code"] == "en":
+                                    translated_transcript = transcript.translate("en")
+
+                                    transcript = translated_transcript.fetch()
+                                    transcript_string = " ".join(
+                                        [segment["text"] for segment in transcript]
+                                    )
+                                    transcript = transcript_string
+                                    status = "Downloaded"
 
                 except TranscriptsDisabled:
                     logger.warning(f"Transcripts disabled")
-                    status = None
                 except Exception as e:
                     logger.warning(e)
                     logger.warning(type(e))

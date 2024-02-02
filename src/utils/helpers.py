@@ -7,7 +7,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from tqdm import tqdm
-
+from deep_translator import GoogleTranslator
+from deep_translator.constants import PONS_CODES_TO_LANGUAGES
 from utils.logger import setup_logger
 import config
 
@@ -68,6 +69,14 @@ def clean_text(data):
     )
 
 
+def translate(text, language=None):
+    if language is None:
+        language = "auto"
+    else:
+        language = PONS_CODES_TO_LANGUAGES["language"]
+    return GoogleTranslator(source=language, target="english").translate(text)
+
+
 def extract_pdfs(data, data_path, data_folder, filename_column):
     texts = []
     for _, row in tqdm(data.iterrows(), total=len(data)):
@@ -77,9 +86,15 @@ def extract_pdfs(data, data_path, data_folder, filename_column):
                 "Inconsistency in db, Status:Downloaded but filename not existing."
             )
         if not filename.exists():
-            texts.append("-")
+            texts.append(None)
         else:
-            text = extract_text(filename)
+            if not row["Text"].isna() and not config.FORCE["PDF_EXTRACT"]:
+                text = extract_text(filename)
+                if row["Language"] != "en" and config.TRANSLATE_TO_EN:
+                    logger.info(
+                        f"Translating text as the language is: {row['Language']}"
+                    )
+                    text = translate(text, language=row["Language"])
             texts.append(text)
     data["Text"] = texts
     data["Text"] = clean_text(data)
