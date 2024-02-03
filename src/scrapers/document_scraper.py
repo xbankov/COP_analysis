@@ -35,7 +35,7 @@ class DocumentScraper(Scraper):
                     "DownloadUrl": download_url,
                     "Language": language,
                     "DocumentUrl": urljoin(self.base_url, cols[4].find("a")["href"]),
-                    "DownloadStatus": "Not Downloaded",
+                    "DownloadStatus": "NotDownloaded",
                 }
             ]
 
@@ -49,15 +49,9 @@ class DocumentScraper(Scraper):
             "DownloadStatus": "first",
             "DownloadUrl": "first",
             "Language": "first",
+            "DocumentName": lambda x: "|".join(x),
         }
-        
+
         # Group by unique combination of 'DownloadUrl' and aggregate columns
         df_grouped = self.data.groupby(["DocumentUrl"]).agg(agg_funcs).reset_index()
-
-        # Include the concatenated 'DocumentName' column
-        df_grouped["DocumentName"] = (
-            self.data.groupby(["DownloadUrl", "DocumentUrl"])["DocumentName"]
-            .agg(lambda x: "|".join(x))
-            .reset_index()["DocumentName"]
-        )
         self.data = df_grouped

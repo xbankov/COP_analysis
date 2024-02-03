@@ -6,3 +6,6 @@ selenium
 tqdm
 youtube-transcript-api
 pytube
+transformers
+stanza
+sacremoses

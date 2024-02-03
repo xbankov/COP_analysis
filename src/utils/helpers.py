@@ -1,18 +1,35 @@
 from pathlib import Path
 import time
 import fitz
-import pandas as pd  # install using: pip install PyMuPDF
+import pandas as pd
+from transformers import MarianTokenizer, MarianMTModel
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from tqdm import tqdm
-from deep_translator import GoogleTranslator
-from deep_translator.constants import PONS_CODES_TO_LANGUAGES
 from utils.logger import setup_logger
 import config
+import stanza
 
 logger = setup_logger()
+
+
+def init_dirs(name):
+    base_data_dir = Path(config.DEFAULT_DATA_DIR)
+    data_dir = base_data_dir / name
+    data_dir.mkdir(parents=True, exist_ok=True)
+    logger.debug(f"mkdir: {data_dir}")
+
+    pdfs_dir = data_dir / "pdfs"
+    pdfs_dir.mkdir(parents=True, exist_ok=True)
+    logger.debug(f"mkdir: {pdfs_dir}")
+
+    txts_dir = data_dir / "txts"
+    txts_dir.mkdir(parents=True, exist_ok=True)
+    logger.debug(f"mkdir: {txts_dir}")
+
+    return data_dir, pdfs_dir, txts_dir
 
 
 def setup_driver(driver_path, headless):
@@ -38,6 +55,22 @@ def setup_driver(driver_path, headless):
     return driver
 
 
+def get_pdf_filename(data_dir, document_name):
+    return data_dir / f"{document_name}.pdf"
+
+
+def get_txt_filename(data_dir, document_name):
+    return data_dir / f"{document_name}.txt"
+
+
+def scrape_url(url, csv_path, html_path, scraper_class):
+    if not csv_path.exists() or config.FORCE["PARSE"]:
+        logger.info(f"Scraper class: {scraper_class}")
+        scraper = scraper_class(url, csv_path, html_path)
+        scraper.load_and_download_html()
+        scraper.parse()
+
+
 def download_pdf(url, filename):
     headers = config.DEFAULT_HEADERS
     response = requests.get(url, headers=headers)
@@ -53,8 +86,43 @@ def download_pdf(url, filename):
     return response.status_code
 
 
-def get_pdf_filename(document_name):
-    return f"{document_name}.pdf"
+def download_files(csv_path, pdfs_dir, filename_column):
+    data = pd.read_csv(csv_path)
+    for index, row in tqdm(data.iterrows(), total=len(data)):
+        was_requested = False
+        url = row["DownloadUrl"]
+
+        filename = get_pdf_filename(pdfs_dir, row[filename_column])
+
+        if filename.exists() and not config.FORCE["DOWNLOAD"]:
+            status = "Downloaded"
+
+        else:
+            if pd.isna(url):
+                logger.debug(f"{filename} has no pdf file associated on row: {index}")
+                status = None
+            else:
+                was_requested = True
+                status = download_pdf(url, filename)
+                if status != 200:
+                    logger.error(f"Request failed with status code: {status}")
+                else:
+                    status = "Downloaded"
+
+        data.at[index, "DownloadStatus"] = status
+        data.to_csv(csv_path, index=None)
+
+        # Only wait 10 seconds if request was made (To prevent blocking from the unfccc).
+        if was_requested:
+            time.sleep(10)
+
+
+def extract_text(pdf_filepath):
+    with fitz.open(pdf_filepath) as doc:
+        text = ""
+        for page in doc:
+            text += " " + page.get_text()
+    return text
 
 
 def clean_text(data):
@@ -69,74 +137,91 @@ def clean_text(data):
     )
 
 
-def translate(text, language=None):
-    if language is None:
-        language = "auto"
-    else:
-        language = PONS_CODES_TO_LANGUAGES["language"]
-    return GoogleTranslator(source=language, target="english").translate(text)
+def save_text(text, filename):
+    with open(filename, "w", encoding="utf8") as f:
+        f.write(text)
 
 
-def extract_pdfs(data, data_path, data_folder, filename_column):
-    texts = []
-    for _, row in tqdm(data.iterrows(), total=len(data)):
-        filename = data_folder / get_pdf_filename(row[filename_column])
-        if not filename.exists() and row["DownloadStatus"] == "Downloaded":
-            logger.error(
-                "Inconsistency in db, Status:Downloaded but filename not existing."
-            )
+def extract_pdfs(csv_path, pdfs_dir, txts_dir, filename_column):
+    data = pd.read_csv(csv_path)
+
+    # Define a function to extract text from a PDF file
+    def extract_text_from_file(row):
+        filename = get_pdf_filename(pdfs_dir, row[filename_column])
         if not filename.exists():
-            texts.append(None)
+            logger.error(f"There is no pdf found to extract: {filename}")
+            return None
+        elif (
+            "Text" in row.index
+            and not pd.isna(row["Text"])
+            and not config.FORCE["PDF_EXTRACT"]
+        ):
+            return row["Text"]
         else:
-            if not row["Text"].isna() and not config.FORCE["PDF_EXTRACT"]:
-                text = extract_text(filename)
-                if row["Language"] != "en" and config.TRANSLATE_TO_EN:
-                    logger.info(
-                        f"Translating text as the language is: {row['Language']}"
-                    )
-                    text = translate(text, language=row["Language"])
-            texts.append(text)
-    data["Text"] = texts
+            return extract_text(filename)
+
+    def save_text_to_file(row):
+        filename = get_txt_filename(txts_dir, row[filename_column])
+        save_text(row["Text"], filename)
+
+    # Apply the function to each row in the DataFrame
+    data["Text"] = data.apply(extract_text_from_file, axis=1)
+
+    # Clean the extracted text
     data["Text"] = clean_text(data)
-    data.to_csv(data_path, index=False)
+
+    data.apply(save_text_to_file, axis=1)
+
+    # Save the updated DataFrame back to the CSV file
+    data.to_csv(csv_path, index=False)
 
 
-def download_files(data, data_path, data_folder, filename_column):
-    for index, row in tqdm(data.iterrows(), total=len(data)):
-        was_requested = False
-        url = row["DownloadUrl"]
+def translate_pdfs(csv_path, txts_dir):
 
-        filename = data_folder / get_pdf_filename(row[filename_column])
+    data = pd.read_csv(csv_path)
 
-        if not filename.exists():
-            if pd.isna(url):
-                logger.warning(f"{filename} has no pdf file associated on row: {index}")
-                status = None
-            else:
-                was_requested = True
-                status = download_pdf(url, filename)
-                if status != 200:
-                    logger.error(f"Request failed with status code: {status}")
-                else:
-                    status = "Downloaded"
+    # Define a dictionary to store models for each language
+    models = {}
 
-            data.at[index, "DownloadStatus"] = status
-            data.to_csv(data_path, index=None)
+    for language in data["Language"].unique():
+        if language != "english":
+            # Get the language code
+            language_code = config.LANGUAGE_TO_CODE[language]
 
-            # Only wait 10 seconds if request was made (To prevent blocking from the unfccc).
-            if was_requested:
-                time.sleep(10)
+            # Create the model name
+            model_name = f"Helsinki-NLP/opus-mt-{language_code}-en"
 
+            # Load the model and tokenizer only once per language
+            if language_code not in models:
+                stanza.download(language_code)
+                models[language_code] = {
+                    "nlp": stanza.Pipeline(language_code),
+                    "model": MarianMTModel.from_pretrained(model_name),
+                    "tokenizer": MarianTokenizer.from_pretrained(model_name),
+                }
 
-def extract_text(pdf_filepath):
-    with fitz.open(pdf_filepath) as doc:
-        text = ""
-        for page in doc:
-            text += " " + page.get_text()
-    return text
+            # Apply the translation function to each row in the current group
+            data.loc[data["Language"] == language, "TranslatedText"] = data.loc[
+                data["Language"] == language, "Text"
+            ].apply(lambda x: translate(x, models[language_code]))
+
+    data.to_csv(csv_path, index=False)
 
 
-def create_data_folder(data_folder_path):
-    folder_path = Path(data_folder_path)
-    folder_path.mkdir(parents=True, exist_ok=True)
-    return folder_path
+def translate(text, models):
+    # Break the text into sentences
+    sentences = models["nlp"](text).sentences
+
+    # Translate each sentence individually
+    translated_sentences = []
+    for sentence in sentences:
+        encoded = models["tokenizer"]([sentence.text], return_tensors="pt")
+        translated = models["model"].generate(**encoded)
+        decoded = [
+            models["tokenizer"].decode(t, skip_special_tokens=True) for t in translated
+        ]
+        translated_sentences.append(decoded)
+
+    translated_text = " ".join(translated_sentences)
+
+    return translated_text
