@@ -2,7 +2,7 @@
 from scrapers.decision_scraper import DecisionScraper
 from utils.logger import setup_logger
 from utils.helpers import (
-    download_files,
+    download_pdfs,
     extract_pdfs,
     init_dirs,
     scrape_url,
@@ -20,7 +20,7 @@ def main():
         logger.info(f"###### DOWNLOAD DECISIONS: {name} #######")
         logger.info(f"###### DOWNLOAD URL: {url} ##############")
         logger.info("##########################################")
-        data_dir, pdfs_dir, txts_dir = init_dirs(name)
+        data_dir, pdfs_dir, txts_dir, eng_txts_dir = init_dirs(name)
         csv_path = data_dir / f"{data_dir.name}_{config.DEFAULT_CSV_FILENAME}"
         html_path = data_dir / f"{data_dir.name}_{config.DEFAULT_HTML_FILENAME}"
 
@@ -36,7 +36,7 @@ def main():
         logger.info("############ DOWNLOAD ####################")
         logger.info("##########################################")
         start_time = time.time()
-        download_files(csv_path, pdfs_dir, filename_column="Symbol")
+        download_pdfs(csv_path, pdfs_dir, filename_column="Symbol")
         end_time = time.time()
         logger.info(f"Downloading files finished in: {end_time - start_time} seconds")
 
@@ -54,7 +54,7 @@ def main():
         logger.info("############ Translate #################")
         logger.info("##########################################")
         start_time = time.time()
-        translate_pdfs(csv_path, txts_dir)
+        translate_pdfs(csv_path, txts_dir, eng_txts_dir, "Symbol")
         end_time = time.time()
         logger.info(
             f"Text extraction from PDF finished in: {end_time - start_time} seconds"
