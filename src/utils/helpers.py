@@ -202,14 +202,14 @@ def translate_pdfs(csv_path, txts_dir, eng_txts_dir, filename_column):
             language_code = config.LANGUAGE_TO_CODE[language]
             model_name = f"Helsinki-NLP/opus-mt-{language_code}-en"
             if language_code not in models:
-                stanza.download(language_code)
                 models[language_code] = {
-                    "nlp": stanza.Pipeline(language_code),
                     "model": MarianMTModel.from_pretrained(model_name),
                     "tokenizer": MarianTokenizer.from_pretrained(model_name),
                 }
 
-            for _, row in group.iterrows():
+            for _, row in tqdm(
+                group.iterrows(), total=len(group), desc=f"Translating {language}"
+            ):
                 src = get_txt_filename(txts_dir, row[filename_column])
                 dst = get_txt_filename(eng_txts_dir, row[filename_column])
                 if not dst.exists():
@@ -228,34 +228,16 @@ def translate(text, models):
 
     # Translate each sentence individually
     translated_sentences = []
-    
-        
-        if len(sentence.text) > 300:
-            # Split the sentence into chunks of  300 characters or fewer
-            
+    for sentence in sentences:
 
-            # Translate each chunk individually and append to the translated_sentences list
-            for chunk in chunks:
-                encoded = models["tokenizer"](
-                    [chunk], return_tensors="pt", truncation=True, max_length=512
-                )
-                translated = models["model"].generate(**encoded)
-                decoded = [
-                    models["tokenizer"].decode(t, skip_special_tokens=True)
-                    for t in translated
-                ]
-                translated_sentences.append(" ".join(decoded))
-        else:
-            # If the sentence is not too long, translate it normally
-            encoded = models["tokenizer"](
-                [sentence.text], return_tensors="pt", truncation=True, max_length=512
-            )
-            translated = models["model"].generate(**encoded)
-            decoded = [
-                models["tokenizer"].decode(t, skip_special_tokens=True)
-                for t in translated
-            ]
-            translated_sentences.append(" ".join(decoded))
+        encoded = models["tokenizer"](
+            [sentence], return_tensors="pt", truncation=True, max_length=512
+        )
+        translated = models["model"].generate(**encoded)
+        decoded = [
+            models["tokenizer"].decode(t, skip_special_tokens=True) for t in translated
+        ]
+        translated_sentences.append(" ".join(decoded))
 
     translated_text = " ".join(translated_sentences)
     return translated_text
