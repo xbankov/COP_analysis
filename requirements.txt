@@ -7,5 +7,6 @@ tqdm
 youtube-transcript-api
 pytube
 transformers
-stanza
-sacremoses
+nltk
+googletrans
+deep_translator

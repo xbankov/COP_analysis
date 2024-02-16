@@ -1,17 +1,15 @@
 from pathlib import Path
-import shutil
 import subprocess
 import time
 import pandas as pd
-from transformers import MarianTokenizer, MarianMTModel
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from tqdm import tqdm
+
 from utils.logger import setup_logger
 import config
-import stanza
 
 logger = setup_logger()
 
@@ -138,14 +136,6 @@ def extract_text(pdf_filepath):
     return text
 
 
-# def extract_text(pdf_filepath):
-#     with fitz.open(pdf_filepath) as doc:
-#         text = ""
-#         for page in doc:
-#             text += " " + page.get_text()
-#     return text
-
-
 def clean_text(data):
     return (
         data["Text"]
@@ -181,63 +171,3 @@ def extract_pdfs(csv_path, pdfs_dir, txts_dir, filename_column):
 
     # Apply the function to each row in the DataFrame
     data.apply(extract_text_from_file, axis=1)
-
-
-def translate_pdfs(csv_path, txts_dir, eng_txts_dir, filename_column):
-    data = pd.read_csv(csv_path)
-    models = {}
-
-    for _, group in data.groupby("Language"):
-        language = group["Language"].iloc[0]  # Language of the current group
-
-        if language == "english":
-            # Handle English files by copying them directly to eng_txts_dir
-            for _, row in group.iterrows():
-                src = get_txt_filename(txts_dir, row[filename_column])
-                dst = get_txt_filename(eng_txts_dir, row[filename_column])
-                if not dst.exists():
-                    shutil.copy(src, dst)
-        else:
-            # Existing logic for non-English languages
-            language_code = config.LANGUAGE_TO_CODE[language]
-            model_name = f"Helsinki-NLP/opus-mt-{language_code}-en"
-            if language_code not in models:
-                models[language_code] = {
-                    "model": MarianMTModel.from_pretrained(model_name),
-                    "tokenizer": MarianTokenizer.from_pretrained(model_name),
-                }
-
-            for _, row in tqdm(
-                group.iterrows(), total=len(group), desc=f"Translating {language}"
-            ):
-                src = get_txt_filename(txts_dir, row[filename_column])
-                dst = get_txt_filename(eng_txts_dir, row[filename_column])
-                if not dst.exists():
-                    with open(src, mode="r", encoding="utf-8") as fin:
-                        text = fin.read()
-                    translated_text = translate(text, models[language_code])
-                    with open(dst, mode="w", encoding="utf-8") as fout:
-                        fout.write(translated_text)
-
-    data.to_csv(csv_path, index=False)
-
-
-def translate(text, models):
-    # Break the text into sentences
-    sentences = text.split("\n")
-
-    # Translate each sentence individually
-    translated_sentences = []
-    for sentence in sentences:
-
-        encoded = models["tokenizer"](
-            [sentence], return_tensors="pt", truncation=True, max_length=512
-        )
-        translated = models["model"].generate(**encoded)
-        decoded = [
-            models["tokenizer"].decode(t, skip_special_tokens=True) for t in translated
-        ]
-        translated_sentences.append(" ".join(decoded))
-
-    translated_text = " ".join(translated_sentences)
-    return translated_text

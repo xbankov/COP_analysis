@@ -7,8 +7,8 @@ from utils.helpers import (
     scrape_url,
     download_pdfs,
     extract_pdfs,
-    translate_pdfs,
 )
+from utils.translation import translate_pdfs
 import config
 import time
 
