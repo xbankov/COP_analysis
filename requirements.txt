@@ -8,5 +8,6 @@ youtube-transcript-api
 pytube
 transformers
 nltk
-googletrans
 deep_translator
+sacremoses
+spacy

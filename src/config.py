@@ -29,6 +29,9 @@ FORCE = {
 }
 TRANSLATE_TO_EN = True
 
+MAX_CHARS = 2500
+REQUEST_SLEEP = 3
+
 LANGUAGE_TO_CODE = {
     "afrikaans": "af",
     "albanian": "sq",

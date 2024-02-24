@@ -50,9 +50,9 @@ def main():
         logger.info(
             f"Text extraction from PDF finished in: {end_time - start_time} seconds"
         )
-
+        
         logger.info("##########################################")
-        logger.info("############ Translate #################")
+        logger.info("############ CLEAND & TRANSLATE #################")
         logger.info("##########################################")
         start_time = time.time()
         translate_pdfs(csv_path, txts_dir, eng_txts_dir, "DocumentName")

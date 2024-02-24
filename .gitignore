@@ -162,4 +162,4 @@ data/
 logs/
 .vscode/
 credentials.json
-secret.py
+secret.json
