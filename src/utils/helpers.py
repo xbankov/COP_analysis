@@ -117,7 +117,8 @@ def download_pdfs(csv_path, pdfs_dir, filename_column):
         # Only wait 10 seconds if request was made (To prevent blocking from the unfccc).
         if was_requested:
             data.to_csv(csv_path, index=None)
-            time.sleep(10)
+            time.sleep(config.UNIVERSAL_REQUEST_SLEEP)
+    data.to_csv(csv_path, index=None)
 
 
 def extract_text(pdf_filepath):
@@ -136,22 +137,14 @@ def extract_text(pdf_filepath):
     return text
 
 
-def clean_text(data):
-    return (
-        data["Text"]
-        .str[19:]
-        .str.lower()
-        .str.replace("\W", " ", regex=True)
-        .str.replace("\s", " ", regex=True)
-        .str.replace("\s+", " ", regex=True)
-        .str.strip()
-    )
-
-
 def save_text(text, filename):
-    if text is not None:
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(text)
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(text)
+
+
+def load_text(filename):
+    with open(filename, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 def extract_pdfs(csv_path, pdfs_dir, txts_dir, filename_column):

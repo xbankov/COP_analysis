@@ -26,20 +26,20 @@ def main():
         html_path = data_dir / f"{data_dir.name}_{config.DEFAULT_HTML_FILENAME}"
 
         logger.info("##########################################")
-        logger.info("############ SCRAPE ######################")
+        logger.info("############## SCRAPE HTML ###############")
         logger.info("##########################################")
         start_time = time.time()
         scrape_url(url, csv_path, html_path, DocumentScraper)
         end_time = time.time()
-        logger.info(f"Scraping URL finished in: {end_time - start_time} seconds")
+        logger.info(f"SCRAPE HTML done in {end_time - start_time} seconds.")
 
         logger.info("##########################################")
-        logger.info("############ DOWNLOAD ####################")
+        logger.info("############ DOWNLOAD PDF ################")
         logger.info("##########################################")
         start_time = time.time()
         download_pdfs(csv_path, pdfs_dir, filename_column="DocumentName")
         end_time = time.time()
-        logger.info(f"Downloading files finished in: {end_time - start_time} seconds")
+        logger.info(f"DOWNLOAD PDF done in {end_time - start_time} seconds")
 
         logger.info("##########################################")
         logger.info("############ EXTRACT PDF #################")
@@ -47,19 +47,15 @@ def main():
         start_time = time.time()
         extract_pdfs(csv_path, pdfs_dir, txts_dir, "DocumentName")
         end_time = time.time()
-        logger.info(
-            f"Text extraction from PDF finished in: {end_time - start_time} seconds"
-        )
-        
+        logger.info(f"EXTRACT PDF done in {end_time - start_time} seconds")
+
         logger.info("##########################################")
-        logger.info("############ CLEAND & TRANSLATE #################")
+        logger.info("############ TRANSLATE #################")
         logger.info("##########################################")
         start_time = time.time()
         translate_pdfs(csv_path, txts_dir, eng_txts_dir, "DocumentName")
         end_time = time.time()
-        logger.info(
-            f"Text extraction from PDF finished in: {end_time - start_time} seconds"
-        )
+        logger.info(f"TRANSLATE done in {end_time - start_time} seconds")
 
 
 if __name__ == "__main__":

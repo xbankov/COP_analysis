@@ -77,7 +77,7 @@ class Scraper(ABC):
 
     def load_and_download_html(self):
         try:
-            if self.current_html.exists():
+            if self.current_html.exists() and not config.FORCE["HTML"]:
                 logger.info(f"Saved HTML found: {self.current_html}")
                 self._read_html_from_file()
             else:

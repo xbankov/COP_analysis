@@ -24,13 +24,13 @@ FORCE = {
     "HTML": False,
     "PARSE": False, 
     "DOWNLOAD": False, # Done
-    "PDF_EXTRACT": False, # Done
+    "EXTRACT": False, # Done
     "TRANSLATE": False,
 }
 TRANSLATE_TO_EN = True
 
 MAX_CHARS = 2500
-REQUEST_SLEEP = 3
+UNIVERSAL_REQUEST_SLEEP = 5
 
 LANGUAGE_TO_CODE = {
     "afrikaans": "af",
@@ -51,7 +51,7 @@ LANGUAGE_TO_CODE = {
     "catalan": "ca",
     "cebuano": "ceb",
     "chichewa": "ny",
-    "chinese (simplified)": "zh-CN",
+    "chinese": "zh-CN",
     "chinese (traditional)": "zh-TW",
     "corsican": "co",
     "croatian": "hr",

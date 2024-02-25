@@ -95,7 +95,7 @@ def main():
                     )
                     df.to_csv(data_filename, index=False)
                 if requested:
-                    time.sleep(10)
+                    time.sleep(config.UNIVERSAL_REQUEST_SLEEP)
 
 
 if __name__ == "__main__":
