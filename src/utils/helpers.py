@@ -79,8 +79,11 @@ def csv2json(csv_path, json_dir):
     csv_data = pd.read_csv(csv_path)
     for _, row in csv_data.iterrows():
         json_filename = get_json_filename(json_dir, row["id"])
-        json_dict = read_json(json_filename)
-        json_dict.update(row.to_dict())
+        if json_filename.exists():
+            json_dict = read_json(json_filename)
+            json_dict.update(row.to_dict())
+        else:
+            json_dict = row.to_dict()
         write_json(json_dict, json_filename)
 
 
