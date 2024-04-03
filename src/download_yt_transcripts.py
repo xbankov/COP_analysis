@@ -1,12 +1,15 @@
 #!/usr/bin/env python
+import time
 from pathlib import Path
+
 import pandas as pd
-from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 from pytube import Playlist, YouTube
 from tqdm.auto import tqdm
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api._errors import (NoTranscriptFound,
+                                            TranscriptsDisabled)
+
 import config
-import time
 from utils.logger import setup_logger
 
 logger = setup_logger()
@@ -34,7 +37,7 @@ def main():
 
     for name, playlist_url in config.YOUTUBE_URLS.items():
         playlist = Playlist(playlist_url)
-        data_folder = Path(config.DEFAULT_DATA_DIR) / name
+        data_folder = config.DEFAULT_DATA_DIR / name
         data_folder.mkdir(parents=True, exist_ok=True)
         data_filename = data_folder / f"{data_folder.name}_transcripts.csv"
 

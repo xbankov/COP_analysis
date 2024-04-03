@@ -1,15 +1,21 @@
-from pathlib import Path
+import json
+import random
 import subprocess
 import time
+from pathlib import Path
+
 import pandas as pd
 import requests
+from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from tqdm import tqdm
 
-from utils.logger import setup_logger
 import config
+from utils.logger import setup_logger
 
 logger = setup_logger()
 
@@ -24,15 +30,11 @@ def init_dirs(name):
     pdfs_dir.mkdir(parents=True, exist_ok=True)
     logger.debug(f"mkdir: {pdfs_dir}")
 
-    txts_dir = data_dir / "txts"
-    txts_dir.mkdir(parents=True, exist_ok=True)
-    logger.debug(f"mkdir: {txts_dir}")
+    json_dir = data_dir / "json"
+    json_dir.mkdir(parents=True, exist_ok=True)
+    logger.debug(f"mkdir: {json_dir}")
 
-    eng_txts_dir = data_dir / "eng_txts"
-    eng_txts_dir.mkdir(parents=True, exist_ok=True)
-    logger.debug(f"mkdir: {eng_txts_dir}")
-
-    return data_dir, pdfs_dir, txts_dir, eng_txts_dir
+    return data_dir, pdfs_dir, json_dir
 
 
 def setup_driver(driver_path, headless):
@@ -62,16 +64,100 @@ def get_pdf_filename(data_dir: Path, document_name: str) -> Path:
     return data_dir / f"{document_name}.pdf"
 
 
-def get_txt_filename(data_dir: Path, document_name: str) -> Path:
-    return data_dir / f"{document_name}.txt"
+def get_json_filename(data_dir: Path, document_name: str) -> Path:
+    return data_dir / f"{document_name}.json"
 
 
 def scrape_url(url, csv_path, html_path, scraper_class):
-    if not csv_path.exists() or config.FORCE["PARSE"]:
-        logger.info(f"Scraper class: {scraper_class}")
-        scraper = scraper_class(url, csv_path, html_path)
-        scraper.load_and_download_html()
-        scraper.parse()
+    logger.info(f"Scraper class: {scraper_class}")
+    scraper = scraper_class(url, csv_path, html_path)
+    scraper.load_and_download_html()
+    scraper.parse()
+
+
+def csv2json(csv_path, json_dir):
+    csv_data = pd.read_csv(csv_path)
+    for _, row in csv_data.iterrows():
+        json_filename = get_json_filename(json_dir, row["id"])
+        json_dict = read_json(json_filename)
+        json_dict.update(row.to_dict())
+        write_json(json_dict, json_filename)
+
+
+def extract_metadata(html):
+    metadata = {}
+    soup = BeautifulSoup(html, "lxml")
+    div = soup.find(class_="document-metadata")
+    if len(div) == 0:
+        logger.warning("empty")
+    fields = div.find_all(class_="field--item")
+    for field in fields:
+        label = field.find_previous(class_="field__label").text.strip()
+        value = field.text.strip()
+        metadata[label] = value
+
+    return metadata
+
+
+def make_request_selenium(url):
+    try:
+        options = Options()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("user-agent=" + UserAgent().random)
+        driver = webdriver.Chrome(options=options)
+        driver.get(url)
+        html = driver.page_source
+        return html
+    except WebDriverException as e:
+        logger.error(f"Error fetching detail view for URL: {url}, {e}")
+        return None
+    finally:
+        if driver:
+            driver.quit()
+
+
+def detailview(json_dir):
+    for json_path in tqdm(list(json_dir.iterdir())):
+        with open(json_path, "r") as json_file:
+            data = json.load(json_file)
+
+        if (
+            "extra_metadata" in data
+            and data["extra_metadata"]
+            and not config.FORCE["EXTRA_METADATA"]
+        ):
+            continue
+
+        detail_url = data.get("detail_url")
+        if not detail_url:
+            logger.error(f"No detail URL found in JSON: {json_path}")
+            continue
+
+        html = make_request_selenium(detail_url)
+        if not html:
+            logger.error(f"Failed to fetch HTML for URL: {detail_url}")
+            continue
+
+        metadata = extract_metadata(html)
+        metadata["extra_metadata"] = True
+        data.update(metadata)
+
+        with open(json_path, "w") as json_file:
+            json.dump(data, json_file, indent=4)
+
+        time.sleep(config.UNIVERSAL_REQUEST_SLEEP)
+
+
+def read_json(path):
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def write_json(data, path):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f)
 
 
 def download_pdf(url, filename):
@@ -89,13 +175,13 @@ def download_pdf(url, filename):
     return response.status_code
 
 
-def download_pdfs(csv_path, pdfs_dir, filename_column):
+def download_pdfs(csv_path, pdfs_dir):
     data = pd.read_csv(csv_path)
     for index, row in tqdm(data.iterrows(), total=len(data)):
         was_requested = False
-        url = row["DownloadUrl"]
+        url = row["pdf_url"]
 
-        filename = get_pdf_filename(pdfs_dir, row[filename_column])
+        filename = get_pdf_filename(pdfs_dir, row["id"])
 
         if filename.exists() and not config.FORCE["DOWNLOAD"]:
             status = "Downloaded"
@@ -137,30 +223,30 @@ def extract_text(pdf_filepath):
     return text
 
 
-def save_text(text, filename):
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write(text)
+def save_tag(filename, tag, value):
+    json_dict = read_json(filename)
+    json_dict[tag] = value
+    write_json(json_dict, filename)
 
 
-def load_text(filename):
-    with open(filename, "r", encoding="utf-8") as f:
-        return f.read()
+def load_tag(filename, tag):
+    json_dict = read_json(filename)
+    return json_dict.get(tag, "")
 
 
-def extract_pdfs(csv_path, pdfs_dir, txts_dir, filename_column):
+def extract_pdfs(csv_path, json_dir, pdfs_dir):
     data = pd.read_csv(csv_path)
 
-    # Define a function to extract text from a PDF file
-    def extract_text_from_file(row):
-        src = get_pdf_filename(pdfs_dir, row[filename_column])
-        dst = get_txt_filename(txts_dir, row[filename_column])
+    def extract_text_from_pdf(row):
+        src = get_pdf_filename(pdfs_dir, row["id"])
+        dst = get_json_filename(json_dir, row["id"])
 
         if not src.exists():
             logger.error(f"There is no pdf found to extract: {src}")
 
         elif not dst.exists():
             text = extract_text(src)
-            save_text(text, dst)
+            json_dict = read_json(dst)
+            json_dict["original_text"] = text
 
-    # Apply the function to each row in the DataFrame
-    data.apply(extract_text_from_file, axis=1)
+    data.apply(extract_text_from_pdf, axis=1)

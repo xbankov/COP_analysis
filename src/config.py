@@ -1,12 +1,19 @@
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).parent.parent
 HEADLESS = True
-DEFAULT_DRIVER_PATH = "/home/xbankov/COP_analysis/chromedriver-linux64/chromedriver"
-DEFAULT_DATA_DIR = "data"
+DEFAULT_DRIVER_PATH = PROJECT_ROOT / "chromedriver-linux64/chromedriver"
+DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
 DEFAULT_HTML_FILENAME = "loaded_page.html"
 DEFAULT_CSV_FILENAME = "data.csv"
 DEFAULT_YT_FILENAME = "transcripts.csv"
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.3",
 }
+GCLOUD_SECRET = PROJECT_ROOT / "secrets" / "secret.json"
+GCLOUD_ACCESS_TOKEN = PROJECT_ROOT / "secrets" / "token.json"
+GDRIVE_DATABASE = "1nIPl7_ypSloOJ-ba3mTR_2MYrNYv_w4L"
+
 DOCUMENT_URLS = {
     "HSSpeeches": "https://unfccc.int/documents?f%5B0%5D=category%3ANon-Official%20Documents&f%5B1%5D=conference%3A4112&f%5B2%5D=conference%3A4121&f%5B3%5D=conference%3A4202&f%5B4%5D=conference%3A4225&f%5B5%5D=conference%3A4252&f%5B6%5D=conference%3A4300&f%5B7%5D=conference%3A4301&f%5B8%5D=conference%3A4370&f%5B9%5D=conference%3A4460&f%5B10%5D=conference%3A4466&f%5B11%5D=conference%3A4526&f%5B12%5D=conference%3A4540&f%5B13%5D=document_type%3A853&f%5B14%5D=document_type%3A1934&f%5B15%5D=topic%3A4123",
 }
@@ -22,10 +29,12 @@ YOUTUBE_URLS = {
 }
 FORCE = {
     "HTML": False,
-    "PARSE": False, 
-    "DOWNLOAD": False, # Done
-    "EXTRACT": False, # Done
+    "PARSE": False,
+    "EXTRA_METADATA": False,
+    "DOWNLOAD": False,
+    "EXTRACT": False,
     "TRANSLATE": False,
+    
 }
 TRANSLATE_TO_EN = True
 

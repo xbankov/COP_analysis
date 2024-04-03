@@ -162,4 +162,5 @@ data/
 logs/
 .vscode/
 credentials.json
+token.json
 secret.json

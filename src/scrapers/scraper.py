@@ -1,23 +1,24 @@
-from selenium.webdriver.support.ui import WebDriverWait, Select
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
-from utils.helpers import setup_driver
-from utils.logger import setup_logger
+import time
 from abc import ABC, abstractmethod
 from pathlib import Path
+
 import pandas as pd
-import time
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select, WebDriverWait
 
 import config
+from utils.helpers import setup_driver
+from utils.logger import setup_logger
 
 logger = setup_logger()
 
 
 class Scraper(ABC):
-    def __init__(self, url, data_csv, current_html):
-        self.current_html = Path(current_html)
-        self.data_csv = Path(data_csv)
+    def __init__(self, url: str, data_csv: Path, html_checkpoint: Path):
+        self.html_checkpoint = html_checkpoint
+        self.data_csv = data_csv
         self.url = url
 
         self._initialize_driver()
@@ -45,8 +46,8 @@ class Scraper(ABC):
     def report(self):
         df = pd.read_csv(self.data_csv)
 
-        logger.info(df.value_counts(subset=["Language"]))
-        missing = (df["DownloadUrl"].isna()).sum()
+        logger.info(df.value_counts(subset=["language"]))
+        missing = (df["pdf_url"].isna()).sum()
 
         logger.info(f"Total entries: {len(df)}")
         logger.info(f"Total missing documents: {missing}")
@@ -77,12 +78,12 @@ class Scraper(ABC):
 
     def load_and_download_html(self):
         try:
-            if self.current_html.exists() and not config.FORCE["HTML"]:
-                logger.info(f"Saved HTML found: {self.current_html}")
+            if self.html_checkpoint.exists() and not config.FORCE["HTML"]:
+                logger.info(f"Saved HTML found: {self.html_checkpoint}")
                 self._read_html_from_file()
             else:
                 logger.info(
-                    f"HTML not found: {self.current_html}. Loading and Downloading HTML"
+                    f"HTML not found: {self.html_checkpoint}. Loading and Downloading HTML"
                 )
                 self._initialize_page()
                 total_documents = self._get_total_documents()
@@ -153,11 +154,11 @@ class Scraper(ABC):
         logger.info("'Load more items' button available.")
 
     def _write_html_to_file(self):
-        with open(self.current_html, "w") as f:
+        with open(self.html_checkpoint, "w") as f:
             f.write(self.driver.page_source)
 
     def _read_html_from_file(self):
-        with open(self.current_html, "r") as f:
+        with open(self.html_checkpoint, "r") as f:
             html_content = f.read()
         self.html_content = html_content
 

@@ -1,10 +1,12 @@
 # src/scrapers/scraper1.py
+from urllib.parse import urljoin
+
 import bs4
 import pandas as pd
-from scrapers.scraper import Scraper
+
 from scrapers.parsing import get_pdf_info_from_td, parse_date, parse_text
+from scrapers.scraper import Scraper
 from utils.logger import setup_logger
-from urllib.parse import urljoin
 
 logger = setup_logger()
 

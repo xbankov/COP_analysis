@@ -6,6 +6,16 @@ Databank is stored at: https://drive.google.com/drive/u/0/folders/10uDRjYWxMBoso
 
 ## Installation steps
 
+### Ubuntu 22.04
+
+Install google-sdk: 
+
+https://cloud.google.com/sdk/docs/install#deb
+
+Login:
+
+gcloud auth login
+
 ### Install Conda
 
 `conda create -n <name> python=3.11.5`
@@ -15,5 +25,7 @@ Databank is stored at: https://drive.google.com/drive/u/0/folders/10uDRjYWxMBoso
 ### Install python packages
 
 `pip install -r requirements.txt`
+
+
 
 ## Run steps

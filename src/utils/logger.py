@@ -1,7 +1,7 @@
 # src/utils/logger.py
-from cgitb import handler
-import logging
 import datetime
+import logging
+from cgitb import handler
 from pathlib import Path
 
 

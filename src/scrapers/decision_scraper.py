@@ -1,10 +1,12 @@
 # src/scrapers/scraper1.py
+from urllib.parse import urljoin
+
 import bs4
 import pandas as pd
-from scrapers.scraper import Scraper
+
 from scrapers.parsing import get_pdf_info_from_td, parse_date, parse_text
+from scrapers.scraper import Scraper
 from utils.logger import setup_logger
-from urllib.parse import urljoin
 
 logger = setup_logger()
 
@@ -25,36 +27,38 @@ class DecisionScraper(Scraper):
         for document in documents:
             cols = document.find_all("td")
 
-            download_url, language = get_pdf_info_from_td(cols[4])
+            pdf_url, language = get_pdf_info_from_td(cols[4])
 
             data_list += [
                 {
-                    "Symbol": parse_text(cols[0].getText()),
-                    "DocumentName": parse_text(cols[1].getText()),
-                    "Body": parse_text(cols[2].getText()),
-                    "Date": parse_date(cols[3].getText()),
-                    "DownloadUrl": download_url,
-                    "Language": language,
-                    "DocumentUrl": urljoin(self.base_url, cols[4].find("a")["href"]),
-                    "DownloadStatus": "Not Downloaded",
+                    "symbol": parse_text(cols[0].getText()),
+                    "document_name": parse_text(cols[1].getText()),
+                    "body": parse_text(cols[2].getText()),
+                    "date": parse_date(cols[3].getText()),
+                    "pdf_url": pdf_url,
+                    "language": language,
+                    "detail_url": urljoin(self.base_url, cols[4].find("a")["href"]),
+                    "download_status": "Not Downloaded",
+                    "id": urljoin(self.base_url, cols[4].find("a")["href"]).split("/")[
+                        -1
+                    ],
                 }
             ]
 
         self.data = pd.DataFrame(data_list)
 
     def resolve_duplicates(self):
-        # Define aggregation functions for each column
         agg_funcs = {
-            "Date": "first",
-            "Body": "first",
-            "DownloadStatus": "first",
-            "DownloadUrl": "first",
-            "Language": "first",
-            "DocumentName": lambda x: "|".join(x),
-            "Symbol": lambda x: "|".join(x),
+            "date": "first",
+            "body": "first",
+            "download_status": "first",
+            "pdf_url": "first",
+            "language": "first",
+            "detail_url": "first",
+            "document_name": lambda x: "|".join(x),
+            "symbol": lambda x: "|".join(x),
         }
 
-        # Group by unique combination of 'DownloadUrl' and aggregate columns
-        df_grouped = self.data.groupby(["DocumentUrl"]).agg(agg_funcs).reset_index()
+        df_grouped = self.data.groupby(["id"]).agg(agg_funcs).reset_index()
 
         self.data = df_grouped

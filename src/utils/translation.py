@@ -1,25 +1,23 @@
-import time
 import json
 import re
+import time
 
 import pandas as pd
-from tqdm import tqdm
-
 from deep_translator import DeeplTranslator, GoogleTranslator
 from deep_translator.exceptions import RequestError
-
-from utils.helpers import get_txt_filename, load_text, save_text
-from utils.logger import setup_logger
+from tqdm import tqdm
 
 import config
+from utils.helpers import get_json_filename, load_tag, read_json, save_tag
+from utils.logger import setup_logger
 
 logger = setup_logger()
 
 
-def translate_pdfs(csv_path, txts_dir, eng_txts_dir, filename_column):
+def translate_pdfs(csv_path, json_dir):
     data = pd.read_csv(csv_path)
     files = []
-    for _, group in data.groupby("Language"):
+    for _, group in data.groupby("language"):
         language = group["Language"].iloc[0]  # Language of the current group
         language_code = config.LANGUAGE_TO_CODE[language]
 
@@ -28,20 +26,23 @@ def translate_pdfs(csv_path, txts_dir, eng_txts_dir, filename_column):
             total=len(group),
             desc=f"Cleaning and translating {language}",
         ):
-            src = get_txt_filename(txts_dir, row[filename_column])
-            dst = get_txt_filename(eng_txts_dir, row[filename_column])
-            if not dst.exists():
-                text = load_text(src)
+            json_path = get_json_filename(json_dir, row["id"])
+            json_dict = read_json(json_path)
+
+            if (
+                not "translated_text" in json_dict.keys()
+                and not config.FORCE["TRANSLATE"]
+            ):
+                text = load_tag(json_path, "original_text")
                 sentences = split_sentences(text, language_code)
                 if len(sentences) == 0:
-                    print(f"{src.name} contains no sentences. Check if not scan!")
-                    files.append(src.name)
+                    print(f"{json_path} contains no sentences. Check if not scan!")
+                    files.append(json_path)
                     continue
 
                 if language == "english":
-                    with open(dst, mode="w", encoding="utf-8") as fout:
-                        fout.write("\n".join(sentences))
-                        continue
+                    save_tag(json_path, "translated_text", text)
+                    continue
 
                 for translate in [
                     translate_google,
@@ -63,8 +64,8 @@ def translate_pdfs(csv_path, txts_dir, eng_txts_dir, filename_column):
                             "Unknown error, couldn't translate continuing on the next text."
                         )
 
-                save_text(translated_text, dst)
-    print(files)
+                save_tag(json_path, "translated_text", translated_text)
+    logger.error(f"These files had zero sentences: {files}")
 
 
 def clean_sentence(sentence):

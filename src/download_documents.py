@@ -1,16 +1,11 @@
 #!/usr/bin/env python
-from scrapers.document_scraper import DocumentScraper
-
-from utils.logger import setup_logger
-from utils.helpers import (
-    init_dirs,
-    scrape_url,
-    download_pdfs,
-    extract_pdfs,
-)
-from utils.translation import translate_pdfs
-import config
 import time
+
+import config
+from scrapers.document_scraper import DocumentScraper
+from utils.helpers import download_pdfs, extract_pdfs, init_dirs, scrape_url
+from utils.logger import setup_logger
+from utils.translation import translate_pdfs
 
 logger = setup_logger()
 
