@@ -18,7 +18,7 @@ def translate_pdfs(csv_path, json_dir):
     data = pd.read_csv(csv_path)
     files = []
     for _, group in data.groupby("language"):
-        language = group["Language"].iloc[0]  # Language of the current group
+        language = group["language"].iloc[0]  # Language of the current group
         language_code = config.LANGUAGE_TO_CODE[language]
 
         for _, row in tqdm(
